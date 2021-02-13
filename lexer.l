@@ -15,6 +15,7 @@
         char dtype[50];
         int lineno;
         int idx;
+        char* val;
     };
     typedef struct SymbRecord SymbRecord;
 
@@ -41,10 +42,10 @@
         {   
             if(STable[j].ind != -1)
             {
-                printf("Sl No. \t Name \t Scope \t lineno\n");
+                printf("Sl No. \t Name \t Scope \t lineno\tval\n");
                 for(int i=0;i<=STable[j].ind;i++)
                 {
-                    printf("%d\t%s\t%d\t%d\n", STable[j].Records[i].idx, STable[j].Records[i].name, STable[j].Records[i].scope, STable[j].Records[i].lineno);
+                    printf("%d\t%s\t%d\t%d\t%s\n", STable[j].Records[i].idx, STable[j].Records[i].name, STable[j].Records[i].scope, STable[j].Records[i].lineno,STable[j].Records[i].val);
                 }
             }
         }
@@ -97,7 +98,9 @@
 
     void initStack()
     {
-        stack[sp++] = 0;
+        stack[sp] = 0;
+        for(int i=1;i<stack_size;++i)
+            stack[i] = -1;
     }
     
     void push (int i) 
@@ -149,6 +152,24 @@
         initStack();
     }
  	int depth;
+    int depth;
+    int flag_ID=0;
+    int flag_eq=0;
+    int val = 0;
+    int sco;
+    char* s;
+    char* iden;
+    void update(){
+        printf("\n\n\n %d \n\n\n",currScope);
+        for(int i=0; i<=STable[currScope].ind; i++)
+        {
+
+            if(!strcmp(STable[currScope].Records[i].name, iden))
+                STable[currScope].Records[i].val = strdup(s);
+        }   
+        flag_ID = 0;
+        flag_eq = 0; 
+    }
 %}
 
 digit [0-9]
@@ -162,15 +183,14 @@ opExponent ([Ee][+-]?{digits})?
 float {digits}{opFraction}{opExponent}
 %%
 ["\t"]* {
+            int flag_ID=0;
+            int flag_eq=0;
             currTabs = currTabs + yyleng;
 			depth = indent_depth(yytext);
             depth = yyleng;
-            printf("\n\n\nTop: %d", top());
-            printf("Depth: %d\n\n\n", yyleng);
 
 			if(depth < top())
 			{
-				printf("\n\n\nDepth less than top\n\n\n");
                 while (depth < top()) 
                     pop();
 				return T_DD;
@@ -186,11 +206,30 @@ float {digits}{opFraction}{opExponent}
             }
 }
 "\n" { 
+    int flag_ID=0;
+    int flag_eq=0;
     flag = 1;
     prevScope = currScope; 
     prevTabs = currTabs; 
     currTabs = 0; 
     linenumber = linenumber + 1;
+    return T_NL;
+}
+"\n"/{identifier} {
+    flag = 1;
+    prevScope = currScope;
+    prevTabs = currTabs;
+    currTabs = 0;
+    linenumber = linenumber + 1;
+    if(prevTabs > currTabs) {
+        depth = currTabs;
+        if(depth < top())
+		{
+            while (depth < top()) 
+                pop();
+            return T_DD;
+		}   
+    }
     return T_NL;
 }
 def {
@@ -237,7 +276,16 @@ print {
     }
     return T_PRINT;
 }
-{digits} return T_INT;
+{digits} {
+    if(flag_ID == 1 && flag_eq ==1){
+        s = strdup(yytext);
+        printf("\n\n\n %s \n\n\n",s);
+        update();
+    }
+    flag_ID = 0;
+    flag_eq = 0; 
+    return T_INT;
+}
 import return T_IMPORT;
 pass return T_PASS;
 break return T_BREAK;
@@ -252,9 +300,18 @@ False return T_FALSE;
 ":" return T_COLON;
 "*" return T_MUL;
 "/" return T_DIV;
-">" return T_GT;
+">" {
+    flag_ID = 0;
+    flag_eq = 0; 
+    return T_GT;
+}
 "<" return T_LT;
-"=" return T_EQUAL;
+"=" {
+    if(flag_ID == 1){
+        flag_eq = 1;
+    }
+    return T_EQUAL;
+}
 "==" return T_EQ;
 "<=" return T_LE;
 "!=" return T_NE;
@@ -268,11 +325,12 @@ False return T_FALSE;
 #.* ;
 {float} return T_FLOAT;
 {identifier} {
-                if(prevTabs>currTabs)
-                    pop();
-                if(flag == 1) {
-                    check();
-                    flag = 0;
+            flag_ID = 1;
+            sco=currScope;
+            iden = strdup(yytext);
+            if(flag == 1) {
+                check();
+                flag = 0;
             }
             yylval = strdup(yytext);
             insertIntoSymbolTable(currScope, yytext, "identifier");

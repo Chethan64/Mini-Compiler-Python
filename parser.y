@@ -17,14 +17,25 @@
      extern void initStack();
 %}
 
-%token T_EOF T_ND T_DD T_RETURN T_BREAK T_PLUS T_MINUS T_MUL T_DIV T_GT T_LT T_LBRACE T_RBRACE T_LBRKT T_RBRKT T_COMMA T_EQUAL T_NL T_IMPORT T_PASS T_DEF T_TAB T_IF T_ELIF T_ELSE T_FOR T_IN T_RANGE T_PRINT T_TRUE T_FALSE T_COLON T_EQ T_LE T_NE T_GE T_INT T_FLOAT T_IDENTIFIER T_STRING T_AND T_OR T_NOT 
+%token T_EOF T_ND T_DD T_RETURN T_BREAK T_GT T_LT T_LBRACE T_RBRACE T_LBRKT T_RBRKT T_COMMA T_EQUAL T_NL T_IMPORT T_PASS T_DEF T_TAB T_FOR T_IN T_RANGE T_PRINT T_TRUE T_FALSE T_COLON T_LE T_NE T_GE T_INT T_FLOAT T_IDENTIFIER T_STRING T_AND T_OR T_NOT 
+
+%right T_EQ                                         
+%left T_PLUS T_MINUS
+%left T_MUL T_DIV
+%nonassoc T_IF
+%nonassoc T_ELIF
+%nonassoc T_ELSE
 
 %%
 StartParse : T_NL StartParse 
            | finalStatements T_NL StartParse 
-           | finalStatements T_NL 
-           ;
-           
+           | finalStatements T_NL
+           | finalStatements
+           ; 
+
+T_NLDD : T_NL | T_DD
+       ;
+
 constant : T_INT | T_FLOAT | T_STRING 
          ;
 
@@ -95,16 +106,16 @@ print_stmt : T_PRINT T_LBRACE term T_RBRACE ;
 cmpd_stmt : if_stmt | for_stmt ;
 
 start_suite : basic_stmt 
-            | T_NL T_TAB finalStatements suite
-            | T_NL T_ND finalStatements suite
+            | T_NLDD T_TAB finalStatements suite
             ;
 
-suite : T_NL T_ND finalStatements suite 
-      | T_NL end_suite ;
+suite : T_NLDD T_ND finalStatements suite 
+      | T_NLDD T_ND finalStatements
+      | T_NLDD end_suite ;
 
-end_suite : T_DD finalStatements
-          | T_DD
-          | finalStatements
+end_suite : T_NLDD finalStatements 
+          | T_NLDD 
+          | finalStatements 
           |
           ;
 
@@ -116,7 +127,8 @@ elif_stmts : else_stmt
 
 else_stmt : T_ELSE T_COLON start_suite ;
 
-for_stmt : ;
+for_stmt : T_FOR T_IDENTIFIER T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite 
+         | T_FOR T_IDENTIFIER T_IN T_IDENTIFIER T_COLON start_suite;
 
 %%
 void yyerror(char *s)
