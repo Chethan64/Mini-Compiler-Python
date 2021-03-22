@@ -3,31 +3,13 @@
     #include<string.h>
     #include<stdlib.h>
     #include "y.tab.h"
-    
-    #define MAX 100
+
     #define stack_size 100
 
+    int sp = 0;
+    int stack[stack_size];
     int bt_iden = 0;
-
-    struct SymbRecord {
-        int scope;
-        char name[50];
-        char dtype[50];
-        int lineno;
-        int idx;
-        char* val;
-    };
-    typedef struct SymbRecord SymbRecord;
-
-    struct SymbTable {
-        SymbRecord Records[MAX];
-        int ind;
-    };
-    typedef struct SymbTable SymbTable;
-    
-    SymbTable STable[MAX];
-
-    int linenumber = 0;
+    int linenumber = 1;
     int prevTabs = 0;
     int currTabs = 0;
     int prevScope = 0;
@@ -35,41 +17,13 @@
     int totalScopes = 0;
     int flag = 1;
     int backtrack[100][2];
+    int numexp = 0;
+    int depth;
 
-    void displaySymbolTable()
-    {
-        for(int j=0; j<MAX; j++)
-        {   
-            if(STable[j].ind != -1)
-            {
-                printf("Sl No. \t Name \t Scope \t lineno\tval\n");
-                for(int i=0;i<=STable[j].ind;i++)
-                {
-                    printf("%d\t%s\t%d\t%d\t%s\n", STable[j].Records[i].idx, STable[j].Records[i].name, STable[j].Records[i].scope, STable[j].Records[i].lineno,STable[j].Records[i].val);
-                }
-            }
-        }
-    }
-
-    void insertIntoSymbolTable(int cScope, char* name, char* type)
-    {
-        for(int i=0; i<=STable[cScope].ind; i++)
-        {
-            if((!strcmp(STable[cScope].Records[i].name, name) && STable[cScope].Records[i].scope == cScope))
-                return;
-        }     
-        STable[cScope].ind++;
-        STable[cScope].Records[STable[cScope].ind].scope = cScope;
-        strcpy(STable[cScope].Records[STable[cScope].ind].name, name);
-        strcpy(STable[cScope].Records[STable[cScope].ind].dtype, type);
-        STable[cScope].Records[STable[cScope].ind].idx = STable[cScope].ind;
-        STable[cScope].Records[STable[cScope].ind].lineno = linenumber;
-
-    }
-    
     void check()
     {
-        if(prevTabs < currTabs){
+        if(prevTabs < currTabs)
+        {
             totalScopes++;
             currScope = totalScopes;
         }    
@@ -94,8 +48,6 @@
         bt_iden++;
     }
 
-    int sp = 0, stack[stack_size];
-
     void initStack()
     {
         stack[sp] = 0;
@@ -108,7 +60,10 @@
    		if (++sp<stack_size) 
            stack[sp]= i;
    		else 
-           {printf ("error: stack overflow\n"); exit(1);}
+        {
+            printf("\033[1;31m Error: Stack Overflow\033[0m\n");  
+            exit(1);
+        }
  	}
  	
  	int pop() 
@@ -116,7 +71,10 @@
    		if (sp>-1) 
            return stack[sp--];
    		else 
-           {printf ("error: stack underflow\n"); exit(1);}
+        {   
+            printf("\033[1;31m Error: Stack Underflow\033[0m\n"); 
+            exit(1);
+        }
  	}
  	
  	int top()
@@ -137,39 +95,10 @@
 				tab_count++;
 			}
 			else
-			{
-				printf("Nope");
 				break;
-			}	
 		}
 		return tab_count;
 	}	
-
-    void initSymbolTable()
-    {
-        for(int i=0;i<MAX;++i)
-            STable[i].ind = -1;
-        initStack();
-    }
- 	int depth;
-    int depth;
-    int flag_ID=0;
-    int flag_eq=0;
-    int val = 0;
-    int sco;
-    char* s;
-    char* iden;
-    void update(){
-        printf("\n\n\n %d \n\n\n",currScope);
-        for(int i=0; i<=STable[currScope].ind; i++)
-        {
-
-            if(!strcmp(STable[currScope].Records[i].name, iden))
-                STable[currScope].Records[i].val = strdup(s);
-        }   
-        flag_ID = 0;
-        flag_eq = 0; 
-    }
 %}
 
 digit [0-9]
@@ -181,46 +110,48 @@ whitespace {delimiter}+
 opFraction (\.{digits})?
 opExponent ([Ee][+-]?{digits})?
 float {digits}{opFraction}{opExponent}
+comment #.*
+
 %%
 ["\t"]* {
-            int flag_ID=0;
-            int flag_eq=0;
-            currTabs = currTabs + yyleng;
-			depth = indent_depth(yytext);
-            depth = yyleng;
+    printf("\033[0;32mToken Found:\033[0m TAB\n");
+    currTabs = currTabs + yyleng;
+    depth = indent_depth(yytext);
+    depth = yyleng;
 
-			if(depth < top())
-			{
-                while (depth < top()) 
-                    pop();
-				return T_DD;
-			}
-			if(depth == top())
-            {
-				return T_ND;	
-            }			
-			if(depth > top())
-            {
-				push(depth);
-				return T_TAB;	
-            }
+	if(depth < top())
+	{
+        while (depth < top()) 
+            pop();
+		return T_DD;
+	}
+	if(depth == top())
+    {
+		return T_ND;	
+    }			
+	if(depth > top())
+    {
+		push(depth);
+		return T_TAB;	
+    }
 }
-"\n" { 
-    int flag_ID=0;
-    int flag_eq=0;
+["\n"]+ { 
+    printf("\033[0;32mToken Found:\033[0m NEW LINE\n");
     flag = 1;
     prevScope = currScope; 
     prevTabs = currTabs; 
     currTabs = 0; 
-    linenumber = linenumber + 1;
+    linenumber = linenumber + yyleng;
+    numexp = 0;
     return T_NL;
 }
-"\n"/{identifier} {
+["\n"]+/{identifier} {
+    printf("\033[0;32mToken Found:\033[0m NEW LINE\n");
     flag = 1;
     prevScope = currScope;
     prevTabs = currTabs;
     currTabs = 0;
-    linenumber = linenumber + 1;
+    linenumber = linenumber + yyleng;
     if(prevTabs > currTabs) {
         depth = currTabs;
         if(depth < top())
@@ -232,7 +163,9 @@ float {digits}{opFraction}{opExponent}
     }
     return T_NL;
 }
+["\n"]+["\t"]+/{comment} ;
 def {
+    printf("\033[0;32mToken Found:\033[0m DEF\n");
     if(flag==1){
         check();
         flag = 0;
@@ -240,6 +173,7 @@ def {
     return T_DEF;
 } 
 if {
+    printf("\033[0;32mToken Found:\033[0m IF\n");
     if(flag==1){
         check();
         flag = 0;
@@ -247,6 +181,7 @@ if {
     return T_IF;
 }
 elif {
+    printf("\033[0;32mToken Found:\033[0m ELIF\n");
         if(flag==1){
         check();
         flag = 0;
@@ -254,22 +189,31 @@ elif {
     return T_ELIF;
 }
 else {
-    if(flag==1){
+    printf("\033[0;32mToken Found:\033[0m ELSE\n");
+    if(flag == 1){
         check();
         flag = 0;
     }
     return T_ELSE;
 }
 for {
-    if(flag==1){
+    printf("\033[0;32mToken Found:\033[0m FOR\n");
+    if(flag == 1){
         check();
         flag = 0;
     }
     return T_FOR;
 }
-in return T_IN;
-range return T_RANGE;
+in {
+     printf("\033[0;32mToken Found:\033[0m IN\n");
+    return T_IN;
+}
+range {
+     printf("\033[0;32mToken Found:\033[0m RANGE\n");
+    return T_RANGE;
+}
 print {
+     printf("\033[0;32mToken Found:\033[0m PRINT\n");
     if(flag==1){
         check();
     flag = 0;
@@ -277,74 +221,176 @@ print {
     return T_PRINT;
 }
 {digits} {
-    if(flag_ID == 1 && flag_eq ==1){
-        s = strdup(yytext);
-        printf("\n\n\n %s \n\n\n",s);
-        update();
-    }
-    flag_ID = 0;
-    flag_eq = 0; 
+    printf("\033[0;32mToken Found:\033[0m %s\n",yytext);
+    yylval.text = strdup(yytext);
     return T_INT;
+    }
+import {
+    printf("\033[0;32mToken Found:\033[0m IMPORT\n");
+    return T_IMPORT;
 }
-import return T_IMPORT;
-pass return T_PASS;
-break return T_BREAK;
-return return T_RETURN;
-and return T_AND;
-or return T_OR;
-not return T_NOT;
-True return T_TRUE;
-False return T_FALSE;
-"+" return T_PLUS;
-"-" return T_MINUS;
-":" return T_COLON;
-"*" return T_MUL;
-"/" return T_DIV;
+pass {
+    printf("\033[0;32mToken Found:\033[0m PASS\n");
+    return T_PASS;
+}
+break {
+    printf("\033[0;32mToken Found:\033[0m BREAK\n");
+    return T_BREAK;
+}
+return {
+      printf("\033[0;32mToken Found:\033[0m RETURN\n");
+    return T_RETURN;
+}
+and {
+    printf("\033[0;32mToken Found:\033[0m AND\n");
+    return T_AND;
+}
+or {
+     printf("\033[0;32mToken Found:\033[0m OR\n");
+    return T_OR;
+}
+not {
+    printf("\033[0;32mToken Found:\033[0m NOT\n"); 
+    return T_NOT;
+} 
+True {
+    printf("\033[0;32mToken Found:\033[0m TRUE\n"); 
+    return T_TRUE;
+}
+False {
+     printf("\033[0;32mToken Found:\033[0m FALSE\n"); 
+    return T_FALSE;
+}
+"+" {
+     printf("\033[0;32mToken Found:\033[0m +\n"); 
+    return T_PLUS;
+}
+"-" {
+     printf("\033[0;32mToken Found:\033[0m -\n"); 
+    return T_MINUS;
+}
+":" {
+    printf("\033[0;32mToken Found:\033[0m :\n"); 
+    return T_COLON;
+}
+"*" {
+    printf("\033[0;32mToken Found:\033[0m *\n"); 
+    return T_MUL;
+}
+"/" {
+     printf("\033[0;32mToken Found:\033[0m /\n"); 
+    return T_DIV;
+}
 ">" {
-    flag_ID = 0;
-    flag_eq = 0; 
+     printf("\033[0;32mToken Found:\033[0m >\n"); 
     return T_GT;
 }
-"<" return T_LT;
+"<" {
+     printf("\033[0;32mToken Found:\033[0m <\n"); 
+    return T_LT;
+}
 "=" {
-    if(flag_ID == 1){
-        flag_eq = 1;
-    }
+     printf("\033[0;32mToken Found:\033[0m =\n"); 
     return T_EQUAL;
 }
-"==" return T_EQ;
-"<=" return T_LE;
-"!=" return T_NE;
-">=" return T_GE;
-"(" return T_LBRACE;
-")" return T_RBRACE;
-\[ return T_LBRKT;
-\] return T_RBRKT;
-"," return T_COMMA;
+"==" {
+     printf("\033[0;32mToken Found:\033[0m ==\n"); 
+    return T_EQ;
+}
+"<=" {
+     printf("\033[0;32mToken Found:\033[0m <=\n"); 
+    return T_LE;
+}
+"!=" {
+     printf("\033[0;32mToken Found:\033[0m !=\n"); 
+    return T_NE;
+}
+">=" {
+     printf("\033[0;32mToken Found:\033[0m >=\n"); 
+    return T_GE;
+}
+"(" {
+     printf("\033[0;32mToken Found:\033[0m (\n"); 
+    return T_LBRACE;
+}
+")" {
+    printf("\033[0;32mToken Found:\033[0m )\n"); 
+    return T_RBRACE;  
+}
+"[]" {
+    printf("\033[0;32mToken Found:\033[0m []\n");
+    return T_LRBRKT;
+} 
+"[" {
+     printf("\033[0;32mToken Found:\033[0m [\n"); 
+    return T_LBRKT;
+}
+"]" {
+     printf("\033[0;32mToken Found:\033[0m ]\n"); 
+    return T_RBRKT;
+}
+
+"," {
+     printf("\033[0;32mToken Found:\033[0m ,\n"); 
+    return T_COMMA;
+}
 " " ;
 #.* ;
-{float} return T_FLOAT;
-{identifier} {
-            flag_ID = 1;
-            sco=currScope;
-            iden = strdup(yytext);
-            if(flag == 1) {
-                check();
-                flag = 0;
-            }
-            yylval = strdup(yytext);
-            insertIntoSymbolTable(currScope, yytext, "identifier");
-            return T_IDENTIFIER;
+{float} {
+    printf("\033[0;32mToken Found:\033[0m %s\n",yytext); 
+    yylval.text = strdup(yytext);
+    return T_FLOAT;
     }
-\"([^\"\n])*\" {
-            yylval = strdup(yytext);
+
+{identifier} {
+    printf("\033[0;32mToken Found:\033[0m %s\n", yytext); 
+    if(flag == 1) {
+        check();
+        flag = 0;
+    }
+    if(strlen(yytext)>79){
+    	printf("\033[1;31mSyntax Error: Identifier length exceeded 79 characters\033[0m\n");
+    	yytext[79] = '\0';
+    	char trunc[79];
+    	for(int i=0;i<79;++i)
+    		trunc[i] = yytext[i];
+    	trunc[79] = '\0';
+    	yylval.text = strdup(trunc);
+    	return T_IDENTIFIER;
+    }
+
+    yylval.text = strdup(yytext);
+    return T_IDENTIFIER;
+}
+\"([^\"])*\" {
+    printf("\033[0;32mToken Found:\033[0m %s\n", yytext); 
+    char s[yyleng];
+    int j = 0;
+    for(int i=0 ; i<yyleng ; i++){
+    	if(yytext[i] != '\n')
+    		s[j++] = yytext[i];
+    }
+    s[j] = '\0';
+    if(j != yyleng)
+    	printf("\033[1;31mSyntax Error: New Line is found in a string\033[0m\n");
+    yylval.text = strdup(s);
+    return T_STRING;
+}
+\'([^\'])*\' {
+            printf("\033[0;32mToken Found:\033[0m %s\n", yytext); 
+            char s[yyleng];
+            int j=0;
+            for(int i=0 ; i<yyleng ; i++){
+            	if(yytext[i] != '\n')
+            		s[j++] = yytext[i];
+            }
+            s[j] = '\0';
+            if(j != yyleng)
+            	printf("\033[1;31mSyntax Error: New Line is found in a string\033[0m\n");
+            yylval.text = strdup(s);
             return T_STRING;
                 }
-\'([^\'\n])*\' {
-            yylval = strdup(yytext);
-            return T_STRING;
-                }
-\"\"\"(.|[\n^\"])*\"\"\" ;  
-\'\'\'(.|[\n^\'])*\'\'\' ;
-. return *yytext;
+\"\"\"(.|[\n^\"])*?\"\"\" ;  
+\'\'\'(.|[\n^\'])*?\'\'\' ;
+. {printf("\033[0;31mError: Found Unmatched Token\033[0m\n");}
 %%
