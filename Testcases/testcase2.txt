@@ -1,0 +1,23 @@
+"""Import statement, 
+function definition 'and 
+call
+"""
+
+import numpy
+if a>10:
+	b = 100
+	if True:
+		c = 100
+		def grad(x,y,z):
+			print("Computing gradient")
+			return grd
+		grad()
+	else:
+		print("False")
+elif a<10:
+	# Exceeding character limit
+	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa = 1
+else:
+	for i in range(100):
+		if x < usd:
+			print("If inside for inside else")
