@@ -1,0 +1,40 @@
+# Correct syntax input
+
+hello = 10
+b = 10
+t = 10
+q = b + t
+
+if t<100:
+	k = 100
+	if k<1000:
+		num = 100
+		bi = 255
+	b = 1
+	c = 50
+elif b>100:
+	if b<900:
+		h = 100
+	else:
+		n = 100
+	z = 100
+	c = 100
+else:
+	if b>=100:
+		x=10
+	m = 10
+	q = 10
+
+for i in range(b):
+	g = 1000
+	if b>100:
+		min = 500
+	elif m<10:
+		bp = 1324
+	else:
+		nmp = 177
+
+for i in l:
+	print()
+
+a = "hello"

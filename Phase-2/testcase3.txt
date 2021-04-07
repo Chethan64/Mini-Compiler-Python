@@ -1,0 +1,10 @@
+for i in range(1000):
+	print(i)
+	num = i + 2
+	for j in range(100):
+		digit = 100
+		count = 123
+		if digit>100:
+			d = 100
+		else:
+			e = 1000
