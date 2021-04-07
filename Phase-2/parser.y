@@ -37,6 +37,7 @@
 		int scope;
 		record *Elements;
 		int Parent;
+		int ParentSIndex;
 	} STable;
 
 	typedef struct ASTNode
@@ -157,8 +158,9 @@
 	void insertRecord(const char* type, const char *name, int lineNo, int scope)
 	{ 
 		int FScope = power(scope, arrayScope[scope]);
-		int index = scopeBasedTableSearch(FScope);
+		int index = scopeBasedTableSearch(scope);
 		int recordIndex = searchRecordInScope(type, name, index);
+		printf("Insert Record: Value: %s, Type: %s, Scope: %d, recordindex: %d\n", type, name, scope, recordIndex);
 		if(recordIndex==-1)
 		{
 			symbolTables[index].Elements[symbolTables[index].noOfElems].type = (char*)calloc(30, sizeof(char));
@@ -176,14 +178,16 @@
 		{
 			symbolTables[index].Elements[recordIndex].lastUseLine = lineNo;
 		}
+		
 	}
 	
 	record* findRecord(const char *name, const char *type, int scope)
 	{
-		int i =0;
+		int i = 0;
+		printf("Find Record: Value: %s, Type: %s, Scope: %d\n",name,type,scope);
 		int index = scopeBasedTableSearch(scope);
-		printf("FR: %d, %s\n", scope, name);
-		if(index==0)
+		printf("FR: %d, %d, %s\n", index, scope, name);
+		if(index == 0)
 		{
 			for(i=0; i<symbolTables[index].noOfElems; i++)
 			{
@@ -322,6 +326,7 @@
 		newNode = (node*)calloc(1, sizeof(node));
 		newNode->NType = NULL;
 		newNode->noOps = -1;
+		printf("Value: %s, Type: %s, Scope: %d\n",type,value,scope);
 		newNode->id = findRecord(value, type, scope);
 		newNode->nodeNo = nodeCount++;
 		return newNode;
@@ -584,7 +589,7 @@ return_stmt : T_RETURN constant {$$ = createOp("return", 1, $2);}
             | T_RETURN {$$ = createOp("return", 0);}
             ;
 
-assign_stmt : T_IDENTIFIER T_EQUAL arith_exp {insertRecord("Identifier", $<text>1, @1.first_line, currentScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currentScope), $3);}  
+assign_stmt : T_IDENTIFIER T_EQUAL arith_exp {printf("Assign\n"); insertRecord("Identifier", $<text>1, @1.first_line, currentScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currentScope), $3);}  
             | T_IDENTIFIER T_EQUAL bool_exp {insertRecord("Identifier", $<text>1, @1.first_line, currentScope);$$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currentScope), $3);} 
             | T_IDENTIFIER T_EQUAL func_call {insertRecord("Identifier", $<text>1, @1.first_line, currentScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currentScope), $3);} 
             | T_IDENTIFIER T_EQUAL T_LBRKT T_RBRKT {insertRecord("ListTypeID", $<text>1, @1.first_line, currentScope); $$ = createID_Const("ListTypeID", $<text>1, currentScope);} ;

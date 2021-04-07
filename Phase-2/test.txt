@@ -1,18 +1,11 @@
-a = 5
-
-if a<10:
-	d = 10
-
 b = 100
 
-if b>a:
+if b>b:
 	h = 100
-	g = "Hello"
 	if h>5:
 		j = 10
+		if b>10:
+			print(b)
 	else:
 		n = 100
-elif a<10:
-	m = 14
-else:
-	num = 55
+
