@@ -1,5 +1,10 @@
-a = 5
-if a<10:
-	d = 10
-b = 100
+a = 10
+b = 10
+c = a + b
 
+for i in range(a):
+	d = 100
+	if d>a:
+		print(c)
+	else:
+		c = c + 1

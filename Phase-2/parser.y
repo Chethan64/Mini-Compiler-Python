@@ -141,7 +141,7 @@
 	{
 		// arrayScope[scope]++;
 		sIndex++;
-		printf("SIndex: %d CurrScope: %d\n",sIndex,currScope);
+		// printf("SIndex: %d CurrScope: %d\n",sIndex,currScope);
 		scopeIndexMap[totalScopes+1] = sIndex;
 		symbolTables[sIndex].no = sIndex;
 		symbolTables[sIndex].scope = currScope;
@@ -181,10 +181,10 @@
 		// int index = scopeBasedTableSearch(scope);
 		int index = scopeIndexMap[scope];
 		int recordIndex = searchRecordInScope(type, name, index);
-		printf("Insert Record: Value: %s, Type: %s, Scope: %d, recordindex: %d, index: %d\n", type, name, scope, recordIndex, index);
+		// printf("Insert Record: Value: %s, Type: %s, Scope: %d, recordindex: %d, index: %d\n", type, name, scope, recordIndex, index);
 		if(recordIndex == -1)
 		{
-			printf("CSCOPE1: %d\n", currScope);
+			// printf("CSCOPE1: %d\n", currScope);
 			symbolTables[index].Elements[symbolTables[index].noOfElems].type = (char*)calloc(30, sizeof(char));
 			symbolTables[index].Elements[symbolTables[index].noOfElems].name = (char*)calloc(20, sizeof(char));
 
@@ -194,7 +194,7 @@
 			symbolTables[index].Elements[symbolTables[index].noOfElems].STableScope = currScope;
 			symbolTables[index].Elements[symbolTables[index].noOfElems].lastUseLine = lineNo;
 			symbolTables[index].noOfElems++;
-			printf("CSCOPE: %d\n", currScope);
+			// printf("CSCOPE: %d\n", currScope);
 		}
 		else
 		{
@@ -206,11 +206,11 @@
 	record* findRecord(const char *name, const char *type, int scope)
 	{
 		int i = 0;
-		printf("Find Record: Value: %s, Type: %s, Scope: %d\n",name,type,scope);
+		// printf("Find Record: Value: %s, Type: %s, Scope: %d\n",name,type,scope);
 		// int index = scopeBasedTableSearch(scope);
 		int index = scopeIndexMap[scope];
 
-		printf("FR: %d, %d, %s\n", index, scope, name);
+		// printf("FR: %d, %d, %s\n", index, scope, name);
 		if(index == -1)
 		{
 			printf("\n%s '%s' at line %d Not Found in Symbol Table\n", type, name, yylineno);
@@ -250,7 +250,10 @@
 		{
 			for(j=0; j<symbolTables[i].noOfElems; j++)
 			{
-				printf("%d \t%s\t%s\t%d\t\t%d\n", symbolTables[i].Elements[j].STableScope, symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine);
+				if(strcmp(symbolTables[i].Elements[j].type,"ICGTempVar") && strcmp(symbolTables[i].Elements[j].type,"ICGTempLabel"))
+					printf("%d \t%s\t%s\t%d\t\t%d\n", symbolTables[i].Elements[j].STableScope, symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine);
+				else
+					printf("- \t%s\t%s\t%d\t\t%d\n", symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine);
 			}
 		}
 		
@@ -260,7 +263,7 @@
 	
 	void updateCScope(int scope)
 	{
-		printf("Updating scope! %d", scope);
+		// printf("Updating scope! %d", scope);
 		currentScope = scope;
 	}
 
@@ -273,10 +276,10 @@
 	void modifyRecordID(const char *type, const char *name, int lineNo, int scope)
 	{
 		int i =0;
-		printf("MODIFYSCOPE %d\n", scope);
+		// printf("MODIFYSCOPE %d\n", scope);
 		// int index = scopeBasedTableSearch(scope);
 		int index = scopeIndexMap[scope];
-		printf("MODIFY1 %d\n", index);
+		// printf("MODIFY1 %d\n", index);
 		if(index == -1)
 		{
 			printf("%s '%s' at line %d Not Declared\n", type, name, yylineno);
@@ -367,7 +370,7 @@
 		newNode = (node*)calloc(1, sizeof(node));
 		newNode->NType = NULL;
 		newNode->noOps = -1;
-		printf("Value: %s, Type: %s, Scope: %d\n",type,value,scope);
+		// printf("Value: %s, Type: %s, Scope: %d\n",type,value,scope);
 		newNode->id = findRecord(value, type, scope);
 		newNode->nodeNo = nodeCount++;
 		return newNode;
@@ -535,6 +538,352 @@
 				return 0;
 			}
 	}
+
+	char *makeStr(int no, int flag)
+	{
+		char A[10];
+		Xitoa(no, A);
+		
+		if(flag==1)
+		{
+				strcpy(tString, "T");
+				strcat(tString, A);
+				insertRecord("ICGTempVar", tString, -1, 1);
+				return tString;
+		}
+		else
+		{
+				strcpy(lString, "L");
+				strcat(lString, A);
+				insertRecord("ICGTempLabel", lString, -1, 1);
+				return lString;
+		}
+
+	}
+	
+	void makeQ(char *R, char *A1, char *A2, char *Op)
+	{
+		
+		allQ[qIndex].R = (char*)malloc(strlen(R)+1);
+		allQ[qIndex].Op = (char*)malloc(strlen(Op)+1);
+		allQ[qIndex].A1 = (char*)malloc(strlen(A1)+1);
+		allQ[qIndex].A2 = (char*)malloc(strlen(A2)+1);
+		
+		strcpy(allQ[qIndex].R, R);
+		strcpy(allQ[qIndex].A1, A1);
+		strcpy(allQ[qIndex].A2, A2);
+		strcpy(allQ[qIndex].Op, Op);
+		allQ[qIndex].I = qIndex;
+ 
+		qIndex++;
+		
+		return;
+	}
+	
+
+
+	void codeGenOp(node *opNode)
+	{
+		if(opNode == NULL)
+		{
+			return;
+		}
+		
+		if(opNode->NType == NULL)
+		{
+			if((!strcmp(opNode->id->type, "Identifier")) || (!strcmp(opNode->id->type, "Constant")))
+			{
+				printf("T%d = %s\n", opNode->nodeNo, opNode->id->name);
+				makeQ(makeStr(opNode->nodeNo, 1), opNode->id->name, "-", "=");
+			}
+			return;
+		}
+		
+		if((!strcmp(opNode->NType, "If")) || (!strcmp(opNode->NType, "Elif")))
+		{			
+			switch(opNode->noOps)
+			{
+				case 2 : 
+				{
+					int temp = lIndex;
+					codeGenOp(opNode->NextLevel[0]);
+					printf("If False T%d goto L%d\n", opNode->NextLevel[0]->nodeNo, lIndex);
+					makeQ(makeStr(temp, 0), makeStr(opNode->NextLevel[0]->nodeNo, 1), "-", "If False");
+					lIndex++;
+					codeGenOp(opNode->NextLevel[1]);
+					lIndex--;
+					printf("L%d: ", temp);
+					makeQ(makeStr(temp, 0), "-", "-", "Label");
+					break;
+				}
+				case 3 : 
+				{
+					int temp = lIndex;
+					codeGenOp(opNode->NextLevel[0]);
+					printf("If False T%d goto L%d\n", opNode->NextLevel[0]->nodeNo, lIndex);
+					makeQ(makeStr(temp, 0), makeStr(opNode->NextLevel[0]->nodeNo, 1), "-", "If False");					
+					codeGenOp(opNode->NextLevel[1]);
+					printf("goto L%d\n", temp+1);
+					makeQ(makeStr(temp+1, 0), "-", "-", "goto");
+					printf("L%d: ", temp);
+					makeQ(makeStr(temp, 0), "-", "-", "Label");
+					codeGenOp(opNode->NextLevel[2]);
+					printf("L%d: ", temp+1);
+					makeQ(makeStr(temp+1, 0), "-", "-", "Label");
+					lIndex+=2;
+					break;
+				}
+			}
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "Else"))
+		{
+			codeGenOp(opNode->NextLevel[0]);
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "While"))
+		{
+			int temp = lIndex;
+			codeGenOp(opNode->NextLevel[0]);
+			printf("L%d: If False T%d goto L%d\n", lIndex, opNode->NextLevel[0]->nodeNo, lIndex+1);
+			makeQ(makeStr(temp, 0), "-", "-", "Label");		
+			makeQ(makeStr(temp+1, 0), makeStr(opNode->NextLevel[0]->nodeNo, 1), "-", "If False");								
+			lIndex+=2;			
+			codeGenOp(opNode->NextLevel[1]);
+			printf("goto L%d\n", temp);
+			makeQ(makeStr(temp, 0), "-", "-", "goto");
+			printf("L%d: ", temp+1);
+			makeQ(makeStr(temp+1, 0), "-", "-", "Label"); 
+			lIndex = lIndex+2;
+			return;
+		}
+
+		if(!strcmp(opNode->NType, "ForRange"))
+		{
+			int temp = lIndex;
+			node* tempnode = createOp("<",2,opNode->NextLevel[0],opNode->NextLevel[1]);
+			codeGenOp(tempnode);
+			char temp_n[5];
+			Xitoa(opNode->NextLevel[0]->nodeNo, temp_n);
+			char temp_ini[5];
+			strcpy(temp_ini, "T");
+			strcat(temp_ini, temp_n);
+			makeQ(temp_ini, "0", "-", "=");
+			printf("%s = 0\n", temp_ini);
+			printf("L%d: If False T%d goto L%d\n", lIndex, tempnode->nodeNo, lIndex+1);
+			makeQ(makeStr(temp, 0), "-", "-", "Label");		
+			makeQ(makeStr(temp+1, 0), makeStr(tempnode->nodeNo, 1), "-", "If False");
+			lIndex+=2;			
+			codeGenOp(opNode->NextLevel[2]);
+			char temp_s[4];
+			strcpy(temp_s, "T");
+			strcat(temp_s, temp_n);
+			makeQ(makeStr(opNode->NextLevel[0]->nodeNo, 1), temp_s, "1", "+");
+			printf("%s = %s + 1\n", temp_s, temp_s);	
+			printf("goto L%d\n", temp);
+			makeQ(makeStr(temp, 0), "-", "-", "goto");
+			printf("L%d: ", temp+1);
+			makeQ(makeStr(temp+1, 0), "-", "-", "Label"); 
+			lIndex = lIndex+2;
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "Next"))
+		{
+			codeGenOp(opNode->NextLevel[0]);
+			codeGenOp(opNode->NextLevel[1]);
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "BeginBlock"))
+		{
+			codeGenOp(opNode->NextLevel[0]);
+			codeGenOp(opNode->NextLevel[1]);		
+			return;	
+		}
+		
+		if(!strcmp(opNode->NType, "EndBlock"))
+		{
+			switch(opNode->noOps)
+			{
+				case 0 : 
+				{
+					break;
+				}
+				case 1 : 
+				{
+					codeGenOp(opNode->NextLevel[0]);
+					break;
+				}
+			}
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "ListIndex"))
+		{
+			printf("T%d = %s[%s]\n", opNode->nodeNo, opNode->NextLevel[0]->id->name, opNode->NextLevel[1]->id->name);
+			makeQ(makeStr(opNode->nodeNo, 1), opNode->NextLevel[0]->id->name, opNode->NextLevel[1]->id->name, "=[]");
+			return;
+		}
+		
+		if(checkIfBinOperator(opNode->NType)==1)
+		{
+			codeGenOp(opNode->NextLevel[0]);
+			codeGenOp(opNode->NextLevel[1]);
+			char *X1 = (char*)malloc(10);
+			char *X2 = (char*)malloc(10);
+			char *X3 = (char*)malloc(10);
+			
+			strcpy(X1, makeStr(opNode->nodeNo, 1));
+			strcpy(X2, makeStr(opNode->NextLevel[0]->nodeNo, 1));
+			strcpy(X3, makeStr(opNode->NextLevel[1]->nodeNo, 1));
+
+			printf("T%d = T%d %s T%d\n", opNode->nodeNo, opNode->NextLevel[0]->nodeNo, opNode->NType, opNode->NextLevel[1]->nodeNo);
+			makeQ(X1, X2, X3, opNode->NType);
+			free(X1);
+			free(X2);
+			free(X3);
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "-"))
+		{
+			if(opNode->noOps == 1)
+			{
+				codeGenOp(opNode->NextLevel[0]);
+				char *X1 = (char*)malloc(10);
+				char *X2 = (char*)malloc(10);
+				strcpy(X1, makeStr(opNode->nodeNo, 1));
+				strcpy(X2, makeStr(opNode->NextLevel[0]->nodeNo, 1));
+				printf("T%d = %s T%d\n", opNode->nodeNo, opNode->NType, opNode->NextLevel[0]->nodeNo);
+				makeQ(X1, X2, "-", opNode->NType);	
+			}
+			
+			else
+			{
+				codeGenOp(opNode->NextLevel[0]);
+				codeGenOp(opNode->NextLevel[1]);
+				char *X1 = (char*)malloc(10);
+				char *X2 = (char*)malloc(10);
+				char *X3 = (char*)malloc(10);
+			
+				strcpy(X1, makeStr(opNode->nodeNo, 1));
+				strcpy(X2, makeStr(opNode->NextLevel[0]->nodeNo, 1));
+				strcpy(X3, makeStr(opNode->NextLevel[1]->nodeNo, 1));
+
+				printf("T%d = T%d %s T%d\n", opNode->nodeNo, opNode->NextLevel[0]->nodeNo, opNode->NType, opNode->NextLevel[1]->nodeNo);
+				makeQ(X1, X2, X3, opNode->NType);
+				free(X1);
+				free(X2);
+				free(X3);
+				return;
+			
+			}
+		}
+		
+		if(!strcmp(opNode->NType, "import"))
+		{
+			printf("import %s\n", opNode->NextLevel[0]->id->name);
+			makeQ("-", opNode->NextLevel[0]->id->name, "-", "import");
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "NewLine"))
+		{
+			codeGenOp(opNode->NextLevel[0]);
+			codeGenOp(opNode->NextLevel[1]);
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "="))
+		{
+			codeGenOp(opNode->NextLevel[1]);
+			printf("%s = T%d\n", opNode->NextLevel[0]->id->name, opNode->NextLevel[1]->nodeNo);
+			makeQ(opNode->NextLevel[0]->id->name, makeStr(opNode->NextLevel[1]->nodeNo, 1), "-", opNode->NType);
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "Func_Name"))
+		{
+			printf("Begin Function %s\n", opNode->NextLevel[0]->id->name);
+			makeQ("-", opNode->NextLevel[0]->id->name, "-", "BeginF");
+			codeGenOp(opNode->NextLevel[2]);
+			printf("End Function %s\n", opNode->NextLevel[0]->id->name);
+			makeQ("-", opNode->NextLevel[0]->id->name, "-", "EndF");
+			return;
+		}
+		
+		if(!strcmp(opNode->NType, "Func_Call"))
+		{
+			if(!strcmp(opNode->NextLevel[1]->NType, "Void"))
+			{
+				printf("(T%d)Call Function %s\n", opNode->nodeNo, opNode->NextLevel[0]->id->name);
+				makeQ(makeStr(opNode->nodeNo, 1), opNode->NextLevel[0]->id->name, "-", "Call");
+			}
+			else
+			{
+				char A[10];
+				char* token = strtok(opNode->NextLevel[1]->NType, ","); 
+  			int i = 0;
+				while (token != NULL) 
+				{
+						i++; 
+				    printf("Push Param %s\n", token);
+				    makeQ("-", token, "-", "Param"); 
+				    token = strtok(NULL, ","); 
+				}
+				
+				printf("(T%d)Call Function %s, %d\n", opNode->nodeNo, opNode->NextLevel[0]->id->name, i);
+				sprintf(A, "%d", i);
+				makeQ(makeStr(opNode->nodeNo, 1), opNode->NextLevel[0]->id->name, A, "Call");
+				printf("Pop Params for Function %s, %d\n", opNode->NextLevel[0]->id->name, i);
+								
+				return;
+			}
+		}		
+		
+		if(!(strcmp(opNode->NType, "Print")))
+		{
+			codeGenOp(opNode->NextLevel[0]);
+			printf("Print T%d\n", opNode->NextLevel[0]->nodeNo);
+			makeQ("-", makeStr(opNode->nodeNo, 1), "-", "Print");
+		}
+		if(opNode->noOps == 0)
+		{
+			if(!strcmp(opNode->NType, "break"))
+			{
+				printf("goto L%d\n", lIndex);
+				makeQ(makeStr(lIndex, 0), "-", "-", "goto");
+			}
+
+			if(!strcmp(opNode->NType, "pass"))
+			{
+				makeQ("-", "-", "-", "pass");
+			}
+
+			if(!strcmp(opNode->NType, "return"))
+			{
+				printf("return\n");
+				makeQ("-", "-", "-", "return");
+			}
+		}
+		
+		
+	}
+		void printQuads()
+	{
+		printf("\n--------------------------------All Quads---------------------------------\n");
+		int i = 0;
+		for(i=0; i<qIndex; i++)
+		{
+			if(allQ[i].I > -1)
+				printf("%d\t%s\t%s\t%s\t%s\n", allQ[i].I, allQ[i].Op, allQ[i].A1, allQ[i].A2, allQ[i].R);
+		}
+		printf("--------------------------------------------------------------------------\n");
+	}
+
 %}
 
 %union {
@@ -557,9 +906,9 @@
 
 %%
 
-StartDebugger : {initStack(); init();} StartParse T_EOF {printf("\nValid python syntax!\n"); printSTable(); printAST($2); freeAll(); exit(0);};
+StartDebugger : {initStack(); init();} StartParse T_EOF {printf("\nValid python syntax!\n");printAST($2); codeGenOp($2); printQuads(); printSTable(); freeAll(); exit(0);};
 
-constant : T_INT {printf("Integer! %d\n", currScope); insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
+constant : T_INT {insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
 	     | T_FLOAT {insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
 		 | T_STRING {insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
 		 ;
@@ -595,7 +944,7 @@ arith_exp : term {$$=$1;}
 		  ;
 
 bool_exp : bool_term T_OR bool_term {$$ = createOp("or", 2, $1, $3);} 
-         | arith_exp T_LT arith_exp {printf("\nHere!\n"); $$ = createOp("<", 2, $1, $3);}
+         | arith_exp T_LT arith_exp {$$ = createOp("<", 2, $1, $3);}
          | bool_term T_AND bool_term {$$ = createOp("and", 2, $1, $3);}
          | arith_exp T_GT arith_exp {$$ = createOp(">", 2, $1, $3);}
          | arith_exp T_LE arith_exp {$$ = createOp("<=", 2, $1, $3);}
@@ -628,7 +977,7 @@ return_stmt : T_RETURN constant {$$ = createOp("return", 1, $2);}
             | T_RETURN {$$ = createOp("return", 0);}
             ;
 
-assign_stmt : T_IDENTIFIER T_EQUAL arith_exp {printf("Assign\n"); insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);}  
+assign_stmt : T_IDENTIFIER T_EQUAL arith_exp {insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);}  
             | T_IDENTIFIER T_EQUAL bool_exp {insertRecord("Identifier", $<text>1, @1.first_line, currScope);$$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);} 
             | T_IDENTIFIER T_EQUAL func_call {insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);} 
             | T_IDENTIFIER T_EQUAL T_LBRKT T_RBRKT {insertRecord("ListTypeID", $<text>1, @1.first_line, currScope); $$ = createID_Const("ListTypeID", $<text>1, currScope);} ;
@@ -661,8 +1010,8 @@ else_stmt : T_ELSE T_COLON start_suite {$$ = createOp("Else", 1, $3);};
 
 temp_ : T_IDENTIFIER {insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createID_Const("Identifier", $<text>1, currScope);};
 
-for_stmt : T_FOR temp_ T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite { $$ = createOp("For", 3,$2, $6, $9);}
-         | T_FOR temp_ T_IN term T_COLON start_suite {$$ = createOp("For", 3, $2, $4, $6);}
+for_stmt : T_FOR temp_ T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite { $$ = createOp("ForRange", 3,$2, $6, $9);}
+         | T_FOR temp_ T_IN term T_COLON start_suite {$$ = createOp("ForList", 3, $2, $4, $6);}
 		 ;
 
 start_suite : basic_stmt {$$=$1;}
