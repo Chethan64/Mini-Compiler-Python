@@ -14,8 +14,10 @@
 	extern int depth;
 	extern int top();
 	extern int pop();
+	extern void initStack();
 	extern int currScope;
 	extern int prevScope;
+	extern int totalScopes;
 	int currentScope = 1, previousScope = 1;
   
 	int yydebug = 1;  
@@ -36,7 +38,8 @@
 		int noOfElems;
 		int scope;
 		record *Elements;
-		int Parent;
+		int ParentScope;
+		int ParentSIndex;
 	} STable;
 
 	typedef struct ASTNode
@@ -58,7 +61,7 @@
 		int I;
 	} Quad;
 	
-	int *arrayScope = NULL;
+	// int *arrayScope = NULL;
 	STable *symbolTables = NULL;
 	int sIndex = -1, aIndex = -1, tabCount = 0, tIndex = 0, lIndex = 0, qIndex = 0, nodeCount = 0;
 	node *rootNode;
@@ -66,7 +69,8 @@
 	char *tString = NULL, *lString = NULL;
 	Quad *allQ = NULL;
 	node ***Tree = NULL;
-	int *levelIndices = NULL;
+	int* levelIndices = NULL;
+	int* scopeIndexMap = NULL;
 	
 	/* Function definitions */
 	record* findRecord(const char *name, const char *type, int scope);
@@ -75,7 +79,7 @@
   	void updateCScope(int scope);
   	void resetDepth();
 	int scopeBasedTableSearch(int scope);
-	void initNewTable(int scope);
+	void initNewTable(int currScope, int prevScope);
 	void init();
 	int searchRecordInScope(const char* type, const char *name, int index);
 	void insertRecord(const char* type, const char *name, int lineNo, int scope);
@@ -101,36 +105,50 @@
 
 	void init()
 	{
+		// printf("INIT1!\n");
 		int i = 0;
 		symbolTables = (STable*)calloc(MAXST, sizeof(STable));
-		arrayScope = (int*)calloc(10, sizeof(int));
-		initNewTable(1);
+		// printf("INIT!\n");
+		scopeIndexMap = (int*)calloc(MAXST, sizeof(int));
+		// printf("INIT!\n");
+		for(i = 0; i<MAXST; ++i)
+		{
+			scopeIndexMap[i] = -1;
+		}
+		scopeIndexMap[1] = 0;
+		// arrayScope = (int*)calloc(10, sizeof(int));
+		// printf("INIT!\n");
+		initNewTable(1,0);
+		// printf("INIT!\n");
 		argsList = (char *)malloc(100);
 		strcpy(argsList, "");
 		tString = (char*)calloc(10, sizeof(char));
 		lString = (char*)calloc(10, sizeof(char));
 		allQ = (Quad*)calloc(MAXQUADS, sizeof(Quad));
 		
+		// printf("INIT!\n");
 		levelIndices = (int*)calloc(MAXLEVELS, sizeof(int));
 		Tree = (node***)calloc(MAXLEVELS, sizeof(node**));
 		for(i = 0; i<MAXLEVELS; i++)
 		{
 			Tree[i] = (node**)calloc(MAXCHILDREN, sizeof(node*));
 		}
+		// printf("INIT!\n");
+		// printf("INIT!\n");
 	}
 
-	void initNewTable(int scope)
+	void initNewTable(int currScope, int prevScope)
 	{
-		arrayScope[scope]++;
+		// arrayScope[scope]++;
 		sIndex++;
+		printf("SIndex: %d CurrScope: %d\n",sIndex,currScope);
+		scopeIndexMap[totalScopes+1] = sIndex;
 		symbolTables[sIndex].no = sIndex;
-		symbolTables[sIndex].scope = power(scope, arrayScope[scope]);
+		symbolTables[sIndex].scope = currScope;
 		symbolTables[sIndex].noOfElems = 0;		
 		symbolTables[sIndex].Elements = (record*)calloc(MAXRECST, sizeof(record));
-
-		int FScope = power(currScope, arrayScope[currScope]);
-		// int index = scopeBasedTableSearch(FScope);
-		symbolTables[sIndex].Parent = scopeBasedTableSearch(FScope);
+		symbolTables[sIndex].ParentScope = prevScope;
+		symbolTables[sIndex].ParentSIndex = scopeIndexMap[prevScope];
 	}
 
 	
@@ -159,11 +177,14 @@
 	
 	void insertRecord(const char* type, const char *name, int lineNo, int scope)
 	{ 
-		int FScope = power(scope, arrayScope[scope]);
-		int index = scopeBasedTableSearch(FScope);
+		// int FScope = power(scope, arrayScope[scope]);
+		// int index = scopeBasedTableSearch(scope);
+		int index = scopeIndexMap[scope];
 		int recordIndex = searchRecordInScope(type, name, index);
-		if(recordIndex==-1)
+		printf("Insert Record: Value: %s, Type: %s, Scope: %d, recordindex: %d, index: %d\n", type, name, scope, recordIndex, index);
+		if(recordIndex == -1)
 		{
+			printf("CSCOPE1: %d\n", currScope);
 			symbolTables[index].Elements[symbolTables[index].noOfElems].type = (char*)calloc(30, sizeof(char));
 			symbolTables[index].Elements[symbolTables[index].noOfElems].name = (char*)calloc(20, sizeof(char));
 
@@ -173,21 +194,29 @@
 			symbolTables[index].Elements[symbolTables[index].noOfElems].STableScope = currScope;
 			symbolTables[index].Elements[symbolTables[index].noOfElems].lastUseLine = lineNo;
 			symbolTables[index].noOfElems++;
-			// printf("CSCOPE: %d\n", currScope);
+			printf("CSCOPE: %d\n", currScope);
 		}
 		else
 		{
 			symbolTables[index].Elements[recordIndex].lastUseLine = lineNo;
 		}
+		
 	}
 	
 	record* findRecord(const char *name, const char *type, int scope)
 	{
-		int i =0;
-		int FScope = power(scope, arrayScope[scope]);
-		int index = scopeBasedTableSearch(FScope);
-		printf("FR: %d, %s\n", scope, name);
-		if(index==0)
+		int i = 0;
+		printf("Find Record: Value: %s, Type: %s, Scope: %d\n",name,type,scope);
+		// int index = scopeBasedTableSearch(scope);
+		int index = scopeIndexMap[scope];
+
+		printf("FR: %d, %d, %s\n", index, scope, name);
+		if(index == -1)
+		{
+			printf("\n%s '%s' at line %d Not Found in Symbol Table\n", type, name, yylineno);
+			exit(1);
+		}
+		if(index == 0)
 		{
 			for(i=0; i<symbolTables[index].noOfElems; i++)
 			{
@@ -208,7 +237,7 @@
 				return &(symbolTables[index].Elements[i]);
 			}	
 		}
-		return findRecord(name, type, symbolTables[symbolTables[index].Parent].scope);
+		return findRecord(name, type, symbolTables[index].ParentScope);
 	}
 
 	void printSTable()
@@ -245,10 +274,14 @@
 	{
 		int i =0;
 		printf("MODIFYSCOPE %d\n", scope);
-		int FScope = power(scope, arrayScope[scope]);
-		int index = scopeBasedTableSearch(FScope);
 		// int index = scopeBasedTableSearch(scope);
+		int index = scopeIndexMap[scope];
 		printf("MODIFY1 %d\n", index);
+		if(index == -1)
+		{
+			printf("%s '%s' at line %d Not Declared\n", type, name, yylineno);
+			exit(1);
+		}
 		if(index==0)
 		{
 			for(i=0; i<symbolTables[index].noOfElems; i++)
@@ -272,15 +305,19 @@
 				return;
 			}	
 		}
-		return modifyRecordID(type, name, lineNo, symbolTables[symbolTables[index].Parent].scope);
+		return modifyRecordID(type, name, lineNo, symbolTables[index].ParentScope);
 	}
 	
 	void checkList(const char *name, int lineNo, int scope)
 	{
 		// int index = scopeBasedTableSearch(scope);
-		int FScope = power(scope, arrayScope[scope]);
-		int index = scopeBasedTableSearch(FScope);
+		int index = scopeIndexMap[scope];
 		int i;
+		if(index == -1)
+		{
+			printf("Identifier '%s' at line %d Not Indexable\n", name, yylineno);
+			exit(1);
+		}
 		if(index==0)
 		{
 			
@@ -321,7 +358,7 @@
 			}
 		}
 		
-		return checkList(name, lineNo, symbolTables[symbolTables[index].Parent].scope);
+		return checkList(name, lineNo, symbolTables[index].ParentScope);
 	}
 
 	node *createID_Const(char *type, char *value, int scope)
@@ -330,6 +367,7 @@
 		newNode = (node*)calloc(1, sizeof(node));
 		newNode->NType = NULL;
 		newNode->noOps = -1;
+		printf("Value: %s, Type: %s, Scope: %d\n",type,value,scope);
 		newNode->id = findRecord(value, type, scope);
 		newNode->nodeNo = nodeCount++;
 		return newNode;
@@ -360,7 +398,7 @@
 
 	void addToList(char *newVal, int flag)
 	{
-		if(flag==0)
+		if(flag == 0)
 		{
 			strcat(argsList, ", ");
 			strcat(argsList, newVal);
@@ -393,6 +431,7 @@
 			free(symbolTables[i].Elements);
 		}
 		free(symbolTables);
+		free(scopeIndexMap);
 		// free(allQ);
 	}
 
@@ -496,9 +535,6 @@
 				return 0;
 			}
 	}
-
-	
-
 %}
 
 %union {
@@ -517,19 +553,19 @@
 %nonassoc T_ELIF
 %nonassoc T_ELSE
 
-%type<node> StartDebugger for_stmt temp_ args start_suite suite end_suite func_call call_args StartParse finalStatements arith_exp bool_exp term constant basic_stmt cmpd_stmt func_def list_index import_stmt pass_stmt break_stmt print_stmt if_stmt elif_stmts else_stmt  return_stmt assign_stmt bool_term bool_factor
+%type<node> StartDebugger for_stmt args start_suite suite end_suite func_call call_args StartParse finalStatements arith_exp bool_exp term constant basic_stmt cmpd_stmt func_def list_index import_stmt pass_stmt break_stmt print_stmt if_stmt elif_stmts else_stmt  return_stmt assign_stmt bool_term bool_factor
 
 %%
 
-StartDebugger : {init();} StartParse T_EOF {printf("\nValid python syntax!\n"); printAST($2); printSTable(); freeAll(); exit(0);};
+StartDebugger : {initStack(); init();} StartParse T_EOF {printf("\nValid python syntax!\n"); printAST($2); printSTable(); freeAll(); exit(0);};
 
-constant : T_INT {insertRecord("Constant", $<text>1, @1.first_line, currentScope); $$ = createID_Const("Constant", $<text>1, currentScope);}
-	     | T_FLOAT {insertRecord("Constant", $<text>1, @1.first_line, currentScope); $$ = createID_Const("Constant", $<text>1, currentScope);}
-		 | T_STRING {insertRecord("Constant", $<text>1, @1.first_line, currentScope); $$ = createID_Const("Constant", $<text>1, currentScope);}
+constant : T_INT {printf("Integer! %d\n", currScope); insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
+	     | T_FLOAT {insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
+		 | T_STRING {insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
 		 ;
 
 
-term : T_IDENTIFIER { printf("Identifier!\n"); modifyRecordID("Identifier", $<text>1, @1.first_line, currentScope); $$ = createID_Const("Identifier", $<text>1, currentScope);}
+term : T_IDENTIFIER { printf("Identifier!\n"); modifyRecordID("Identifier", $<text>1, @1.first_line, currScope); $$ = createID_Const("Identifier", $<text>1, currScope);}
 	 | constant {$$=$1;}
 	 ;
 
@@ -564,21 +600,21 @@ bool_exp : bool_term T_OR bool_term {$$ = createOp("or", 2, $1, $3);}
          | arith_exp T_GT arith_exp {$$ = createOp(">", 2, $1, $3);}
          | arith_exp T_LE arith_exp {$$ = createOp("<=", 2, $1, $3);}
          | arith_exp T_GE arith_exp {$$ = createOp(">=", 2, $1, $3);}
-         | arith_exp T_IN T_IDENTIFIER {checkList($<text>3, @3.first_line, currentScope); $$ = createOp("in", 2, $1, createID_Const("Constant", $<text>3, currentScope));}
+         | arith_exp T_IN T_IDENTIFIER {checkList($<text>3, @3.first_line, currScope); $$ = createOp("in", 2, $1, createID_Const("Constant", $<text>3, currScope));}
          | bool_term {$$=$1;}
 		 ;
 
 bool_term : bool_factor {$$=$1;}
           | arith_exp T_EQ arith_exp {$$ = createOp("==", 2, $1, $3);}
-          | T_TRUE {insertRecord("Constant", "True", @1.first_line, currentScope); $$ = createID_Const("Constant", "True", currentScope);}
-          | T_FALSE  {insertRecord("Constant", "False", @1.first_line, currentScope); $$ = createID_Const("Constant", "False", currentScope);};
+          | T_TRUE {insertRecord("Constant", "True", @1.first_line, currScope); $$ = createID_Const("Constant", "True", currScope);}
+          | T_FALSE  {insertRecord("Constant", "False", @1.first_line, currScope); $$ = createID_Const("Constant", "False", currScope);};
 		  ;
 
 bool_factor : T_NOT bool_factor {$$ = createOp("!", 1, $2);}
             | T_LBRACE bool_exp T_RBRACE {$$=$2;}
 			;
 
-import_stmt : T_IMPORT T_IDENTIFIER {insertRecord("PackageName", $<text>2, @2.first_line, currentScope); $$ = createOp("import", 1, createID_Const("PackageName", $<text>2, currentScope));}
+import_stmt : T_IMPORT T_IDENTIFIER {insertRecord("PackageName", $<text>2, @2.first_line, currScope); $$ = createOp("import", 1, createID_Const("PackageName", $<text>2, currScope));}
 			;
 
 pass_stmt : T_PASS {$$ = createOp("pass", 0);};
@@ -588,14 +624,14 @@ break_stmt : T_BREAK {$$ = createOp("break", 0);};
            ;
 
 return_stmt : T_RETURN constant {$$ = createOp("return", 1, $2);}
-            | T_RETURN T_IDENTIFIER {insertRecord("Identifier", $<text>2, @2.first_line, currentScope); $$ = createOp("return", 1, createID_Const("Identifier", $<text>2, currentScope));}
+            | T_RETURN T_IDENTIFIER {insertRecord("Identifier", $<text>2, @2.first_line, currScope); $$ = createOp("return", 1, createID_Const("Identifier", $<text>2, currScope));}
             | T_RETURN {$$ = createOp("return", 0);}
             ;
 
-assign_stmt : T_IDENTIFIER T_EQUAL arith_exp {insertRecord("Identifier", $<text>1, @1.first_line, currentScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currentScope), $3);}  
-            | T_IDENTIFIER T_EQUAL bool_exp {insertRecord("Identifier", $<text>1, @1.first_line, currentScope);$$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currentScope), $3);} 
-            | T_IDENTIFIER T_EQUAL func_call {insertRecord("Identifier", $<text>1, @1.first_line, currentScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currentScope), $3);} 
-            | T_IDENTIFIER T_EQUAL T_LBRKT T_RBRKT {insertRecord("ListTypeID", $<text>1, @1.first_line, currentScope); $$ = createID_Const("ListTypeID", $<text>1, currentScope);} ;
+assign_stmt : T_IDENTIFIER T_EQUAL arith_exp {printf("Assign\n"); insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);}  
+            | T_IDENTIFIER T_EQUAL bool_exp {insertRecord("Identifier", $<text>1, @1.first_line, currScope);$$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);} 
+            | T_IDENTIFIER T_EQUAL func_call {insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);} 
+            | T_IDENTIFIER T_EQUAL T_LBRKT T_RBRKT {insertRecord("ListTypeID", $<text>1, @1.first_line, currScope); $$ = createID_Const("ListTypeID", $<text>1, currScope);} ;
             ; 
 
 print_stmt : T_PRINT T_LBRACE term T_RBRACE {$$ = createOp("Print", 1, $3);}
@@ -623,14 +659,12 @@ elif_stmts : else_stmt {$$=$1;}
 else_stmt : T_ELSE T_COLON start_suite {$$ = createOp("Else", 1, $3);};
 		  ;
 
-temp_ : T_IDENTIFIER {insertRecord("Identifier", $<text>1, @1.first_line, currentScope); $$=createID_Const("Identifier", $<text>1, currentScope);}
-
-for_stmt : T_FOR temp_ T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite {$$ = createOp("For", 3, $2, $6, $9);}
-         | T_FOR temp_ T_IN term T_COLON start_suite {$$ = createOp("For", 3, $2, $4, $6);}
+for_stmt : T_FOR T_IDENTIFIER T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite {insertRecord("Identifier", $<text>2, @2.first_line, currScope); $$ = createOp("For", 3, createID_Const("Identifier", $<text>2, currScope), $6, $9);}
+         | T_FOR T_IDENTIFIER T_IN term T_COLON start_suite {insertRecord("Identifier", $<text>2, @2.first_line, currScope); $$ = createOp("For", 3, createID_Const("Identifier", $<text>2, currScope), $4, $6);}
 		 ;
 
 start_suite : basic_stmt {$$=$1;}
-            | T_NLDD T_TAB {initNewTable($<depth>2); updateCScope($<depth>2);}  finalStatements suite {$$ = createOp("BeginBlock", 2, $4, $5);};
+            | T_NLDD T_TAB {initNewTable(currScope, prevScope); updateCScope($<depth>2);}  finalStatements suite {$$ = createOp("BeginBlock", 2, $4, $5);};
 			;
 
 T_NLDD : T_NL | T_DD 
@@ -667,10 +701,10 @@ call_args : T_IDENTIFIER {addToList($<text>1, 1);} call_list {$$ = createOp(args
           | {$$ = createOp("Void", 0);};	
 		  ;
 
-func_def : T_DEF T_IDENTIFIER {insertRecord("Func_Name", $<text>2, @2.first_line, currentScope);} T_LBRACE args T_RBRACE T_COLON start_suite {$$ = createOp("Func_Name", 3, createID_Const("Func_Name", $<text>2, currentScope), $5, $8);};
+func_def : T_DEF T_IDENTIFIER {insertRecord("Func_Name", $<text>2, @2.first_line, currScope);} T_LBRACE args T_RBRACE T_COLON start_suite {$$ = createOp("Func_Name", 3, createID_Const("Func_Name", $<text>2, currScope), $5, $8);};
 		 ;
 
-func_call : T_IDENTIFIER T_LBRACE call_args T_RBRACE  {$$ = createOp("Func_Call", 2, createID_Const("Func_Name", $<text>1, currentScope), $3);};
+func_call : T_IDENTIFIER T_LBRACE call_args T_RBRACE  {$$ = createOp("Func_Call", 2, createID_Const("Func_Name", $<text>1, currScope), $3);};
 		  ;
 
 %%
