@@ -127,7 +127,10 @@
 		symbolTables[sIndex].scope = power(scope, arrayScope[scope]);
 		symbolTables[sIndex].noOfElems = 0;		
 		symbolTables[sIndex].Elements = (record*)calloc(MAXRECST, sizeof(record));
-		symbolTables[sIndex].Parent = scopeBasedTableSearch(currentScope);
+
+		int FScope = power(currScope, arrayScope[currScope]);
+		// int index = scopeBasedTableSearch(FScope);
+		symbolTables[sIndex].Parent = scopeBasedTableSearch(FScope);
 	}
 
 	
@@ -181,7 +184,8 @@
 	record* findRecord(const char *name, const char *type, int scope)
 	{
 		int i =0;
-		int index = scopeBasedTableSearch(scope);
+		int FScope = power(scope, arrayScope[scope]);
+		int index = scopeBasedTableSearch(FScope);
 		printf("FR: %d, %s\n", scope, name);
 		if(index==0)
 		{
@@ -241,7 +245,9 @@
 	{
 		int i =0;
 		printf("MODIFYSCOPE %d\n", scope);
-		int index = scopeBasedTableSearch(scope);
+		int FScope = power(scope, arrayScope[scope]);
+		int index = scopeBasedTableSearch(FScope);
+		// int index = scopeBasedTableSearch(scope);
 		printf("MODIFY1 %d\n", index);
 		if(index==0)
 		{
@@ -271,7 +277,9 @@
 	
 	void checkList(const char *name, int lineNo, int scope)
 	{
-		int index = scopeBasedTableSearch(scope);
+		// int index = scopeBasedTableSearch(scope);
+		int FScope = power(scope, arrayScope[scope]);
+		int index = scopeBasedTableSearch(FScope);
 		int i;
 		if(index==0)
 		{
@@ -509,7 +517,7 @@
 %nonassoc T_ELIF
 %nonassoc T_ELSE
 
-%type<node> StartDebugger for_stmt args start_suite suite end_suite func_call call_args StartParse finalStatements arith_exp bool_exp term constant basic_stmt cmpd_stmt func_def list_index import_stmt pass_stmt break_stmt print_stmt if_stmt elif_stmts else_stmt  return_stmt assign_stmt bool_term bool_factor
+%type<node> StartDebugger for_stmt temp_ args start_suite suite end_suite func_call call_args StartParse finalStatements arith_exp bool_exp term constant basic_stmt cmpd_stmt func_def list_index import_stmt pass_stmt break_stmt print_stmt if_stmt elif_stmts else_stmt  return_stmt assign_stmt bool_term bool_factor
 
 %%
 
@@ -615,8 +623,10 @@ elif_stmts : else_stmt {$$=$1;}
 else_stmt : T_ELSE T_COLON start_suite {$$ = createOp("Else", 1, $3);};
 		  ;
 
-for_stmt : T_FOR T_IDENTIFIER T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite {insertRecord("Identifier", $<text>2, @2.first_line, currentScope); $$ = createOp("For", 3, createID_Const("Identifier", $<text>2, currentScope), $6, $9);}
-         | T_FOR T_IDENTIFIER T_IN term T_COLON start_suite {insertRecord("Identifier", $<text>2, @2.first_line, currentScope); $$ = createOp("For", 3, createID_Const("Identifier", $<text>2, currentScope), $4, $6);}
+temp_ : T_IDENTIFIER {insertRecord("Identifier", $<text>1, @1.first_line, currentScope); $$=createID_Const("Identifier", $<text>1, currentScope);}
+
+for_stmt : T_FOR temp_ T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite {$$ = createOp("For", 3, $2, $6, $9);}
+         | T_FOR temp_ T_IN term T_COLON start_suite {$$ = createOp("For", 3, $2, $4, $6);}
 		 ;
 
 start_suite : basic_stmt {$$=$1;}

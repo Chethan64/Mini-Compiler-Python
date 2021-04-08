@@ -1,5 +1,0 @@
-# wrong testcase 2 : colon missing
-
-if a>100
-	hello = 100
-num = 100

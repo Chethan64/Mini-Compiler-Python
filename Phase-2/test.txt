@@ -6,13 +6,16 @@ if a<10:
 b = 100
 
 if b>a:
-	h = 100
+	h = 100 
 	g = "Hello"
 	if h>5:
 		j = 10
 	else:
 		n = 100
 elif a<10:
+	h =10
+	if h<10:  
+		a = 10
 	m = 14
 else:
 	num = 55

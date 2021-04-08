@@ -1,7 +1,0 @@
-# wrong indentation
-
-a = 1
-
-if a>100:
-num = 100
-		min = 100
