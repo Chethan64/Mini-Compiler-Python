@@ -7,7 +7,7 @@
     #define MAXRECST 200
 	#define MAXST 100
 	#define MAXCHILDREN 100
-	#define MAXLEVELS 20
+	#define MAXLEVELS 100
 	#define MAXQUADS 1000
 
     extern int yylineno;
@@ -544,8 +544,7 @@
 };
 %locations
 
-%token T_EQ T_PLUS T_MINUS T_MUL T_DIV T_EOF T_ND T_DD T_RETURN T_BREAK T_GT T_LT T_LBRACE T_RBRACE T_LBRKT T_RBRKT T_COMMA T_EQUAL T_NL T_IMPORT T_PASS T_DEF T_TAB T_FOR T_IN T_RANGE T_PRINT T_TRUE T_FALSE T_COLON T_LE T_NE T_GE T_INT T_FLOAT T_IDENTIFIER T_STRING T_AND T_OR T_NOT T_LRBRKT
-
+%token T_EQ T_PLUS T_MINUS T_MUL T_DIV T_EOF T_ND T_DD T_RETURN T_BREAK T_GT T_LT T_LBRACE T_RBRACE T_LBRKT T_RBRKT T_COMMA T_EQUAL T_NL T_IMPORT T_PASS T_DEF T_TAB T_FOR T_IN T_RANGE T_PRINT T_TRUE T_FALSE T_COLON T_LE T_NE T_GE T_INT T_FLOAT T_IDENTIFIER T_STRING T_AND T_OR T_NOT T_LRBRKT 
 %right T_EQUAL
 %left T_PLUS T_MINUS
 %left T_MUL T_DIV
@@ -553,11 +552,12 @@
 %nonassoc T_ELIF
 %nonassoc T_ELSE
 
-%type<node> StartDebugger for_stmt args start_suite suite end_suite func_call call_args StartParse finalStatements arith_exp bool_exp term constant basic_stmt cmpd_stmt func_def list_index import_stmt pass_stmt break_stmt print_stmt if_stmt elif_stmts else_stmt  return_stmt assign_stmt bool_term bool_factor
+%type<node> StartDebugger for_stmt args start_suite suite end_suite func_call call_args StartParse finalStatements arith_exp bool_exp term constant basic_stmt cmpd_stmt func_def list_index import_stmt pass_stmt break_stmt print_stmt if_stmt elif_stmts else_stmt  return_stmt assign_stmt bool_term bool_factor temp_
+
 
 %%
 
-StartDebugger : {initStack(); init();} StartParse T_EOF {printf("\nValid python syntax!\n"); printAST($2); printSTable(); freeAll(); exit(0);};
+StartDebugger : {initStack(); init();} StartParse T_EOF {printf("\nValid python syntax!\n"); printSTable(); printAST($2); freeAll(); exit(0);};
 
 constant : T_INT {printf("Integer! %d\n", currScope); insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
 	     | T_FLOAT {insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
@@ -659,8 +659,10 @@ elif_stmts : else_stmt {$$=$1;}
 else_stmt : T_ELSE T_COLON start_suite {$$ = createOp("Else", 1, $3);};
 		  ;
 
-for_stmt : T_FOR T_IDENTIFIER T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite {insertRecord("Identifier", $<text>2, @2.first_line, currScope); $$ = createOp("For", 3, createID_Const("Identifier", $<text>2, currScope), $6, $9);}
-         | T_FOR T_IDENTIFIER T_IN term T_COLON start_suite {insertRecord("Identifier", $<text>2, @2.first_line, currScope); $$ = createOp("For", 3, createID_Const("Identifier", $<text>2, currScope), $4, $6);}
+temp_ : T_IDENTIFIER {insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createID_Const("Identifier", $<text>1, currScope);};
+
+for_stmt : T_FOR temp_ T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite { $$ = createOp("For", 3,$2, $6, $9);}
+         | T_FOR temp_ T_IN term T_COLON start_suite {$$ = createOp("For", 3, $2, $4, $6);}
 		 ;
 
 start_suite : basic_stmt {$$=$1;}

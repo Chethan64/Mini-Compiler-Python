@@ -26,15 +26,16 @@ else:
 	q = 10
 
 for i in range(b):
+	m = 10
 	g = 1000
+	m = 10
 	if b>100:
 		min = 500
 	elif m<10:
 		bp = 1324
 	else:
 		nmp = 177
-
-for i in l:
-	print()
-
+l = 1
+for i in range(l):
+	print("udsakj")
 a = "hello"
