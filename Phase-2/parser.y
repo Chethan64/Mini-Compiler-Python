@@ -105,43 +105,32 @@
 
 	void init()
 	{
-		// printf("INIT1!\n");
 		int i = 0;
 		symbolTables = (STable*)calloc(MAXST, sizeof(STable));
-		// printf("INIT!\n");
 		scopeIndexMap = (int*)calloc(MAXST, sizeof(int));
-		// printf("INIT!\n");
 		for(i = 0; i<MAXST; ++i)
 		{
 			scopeIndexMap[i] = -1;
 		}
 		scopeIndexMap[1] = 0;
-		// arrayScope = (int*)calloc(10, sizeof(int));
-		// printf("INIT!\n");
 		initNewTable(1,0);
-		// printf("INIT!\n");
 		argsList = (char *)malloc(100);
 		strcpy(argsList, "");
 		tString = (char*)calloc(10, sizeof(char));
 		lString = (char*)calloc(10, sizeof(char));
 		allQ = (Quad*)calloc(MAXQUADS, sizeof(Quad));
 		
-		// printf("INIT!\n");
 		levelIndices = (int*)calloc(MAXLEVELS, sizeof(int));
 		Tree = (node***)calloc(MAXLEVELS, sizeof(node**));
 		for(i = 0; i<MAXLEVELS; i++)
 		{
 			Tree[i] = (node**)calloc(MAXCHILDREN, sizeof(node*));
 		}
-		// printf("INIT!\n");
-		// printf("INIT!\n");
 	}
 
 	void initNewTable(int currScope, int prevScope)
 	{
-		// arrayScope[scope]++;
 		sIndex++;
-		// printf("SIndex: %d CurrScope: %d\n",sIndex,currScope);
 		scopeIndexMap[totalScopes+1] = sIndex;
 		symbolTables[sIndex].no = sIndex;
 		symbolTables[sIndex].scope = currScope;
@@ -177,14 +166,10 @@
 	
 	void insertRecord(const char* type, const char *name, int lineNo, int scope)
 	{ 
-		// int FScope = power(scope, arrayScope[scope]);
-		// int index = scopeBasedTableSearch(scope);
 		int index = scopeIndexMap[scope];
 		int recordIndex = searchRecordInScope(type, name, index);
-		// printf("Insert Record: Value: %s, Type: %s, Scope: %d, recordindex: %d, index: %d\n", type, name, scope, recordIndex, index);
 		if(recordIndex == -1)
 		{
-			// printf("CSCOPE1: %d\n", currScope);
 			symbolTables[index].Elements[symbolTables[index].noOfElems].type = (char*)calloc(30, sizeof(char));
 			symbolTables[index].Elements[symbolTables[index].noOfElems].name = (char*)calloc(20, sizeof(char));
 
@@ -194,7 +179,6 @@
 			symbolTables[index].Elements[symbolTables[index].noOfElems].STableScope = currScope;
 			symbolTables[index].Elements[symbolTables[index].noOfElems].lastUseLine = lineNo;
 			symbolTables[index].noOfElems++;
-			// printf("CSCOPE: %d\n", currScope);
 		}
 		else
 		{
@@ -206,11 +190,8 @@
 	record* findRecord(const char *name, const char *type, int scope)
 	{
 		int i = 0;
-		// printf("Find Record: Value: %s, Type: %s, Scope: %d\n",name,type,scope);
-		// int index = scopeBasedTableSearch(scope);
 		int index = scopeIndexMap[scope];
 
-		// printf("FR: %d, %d, %s\n", index, scope, name);
 		if(index == -1)
 		{
 			printf("\n%s '%s' at line %d Not Found in Symbol Table\n", type, name, yylineno);
@@ -263,7 +244,6 @@
 	
 	void updateCScope(int scope)
 	{
-		// printf("Updating scope! %d", scope);
 		currentScope = scope;
 	}
 
@@ -276,10 +256,7 @@
 	void modifyRecordID(const char *type, const char *name, int lineNo, int scope)
 	{
 		int i =0;
-		// printf("MODIFYSCOPE %d\n", scope);
-		// int index = scopeBasedTableSearch(scope);
 		int index = scopeIndexMap[scope];
-		// printf("MODIFY1 %d\n", index);
 		if(index == -1)
 		{
 			printf("%s '%s' at line %d Not Declared\n", type, name, yylineno);
@@ -313,7 +290,6 @@
 	
 	void checkList(const char *name, int lineNo, int scope)
 	{
-		// int index = scopeBasedTableSearch(scope);
 		int index = scopeIndexMap[scope];
 		int i;
 		if(index == -1)
@@ -370,7 +346,6 @@
 		newNode = (node*)calloc(1, sizeof(node));
 		newNode->NType = NULL;
 		newNode->noOps = -1;
-		// printf("Value: %s, Type: %s, Scope: %d\n",type,value,scope);
 		newNode->id = findRecord(value, type, scope);
 		newNode->nodeNo = nodeCount++;
 		return newNode;
@@ -410,7 +385,6 @@
 			{
 				strcat(argsList, newVal);
 			}
-		//printf("\n\t%s\n", newVal);
 	}
   
 	void clearArgsList()
@@ -420,9 +394,6 @@
 
   	void freeAll()
 	{
-		// deadCodeElimination();
-		// printQuads();
-		// printf("\n");
 		int i = 0, j = 0;
 		for(i=0; i<=sIndex; i++)
 		{
@@ -435,7 +406,7 @@
 		}
 		free(symbolTables);
 		free(scopeIndexMap);
-		// free(allQ);
+		free(allQ);
 	}
 
 
@@ -685,6 +656,7 @@
 			printf("goto L%d\n", temp);
 			makeQ(makeStr(temp, 0), "-", "-", "goto");
 			printf("L%d: ", temp+1);
+			
 			makeQ(makeStr(temp+1, 0), "-", "-", "Label"); 
 			lIndex = lIndex+2;
 			return;
@@ -850,6 +822,16 @@
 			printf("Print T%d\n", opNode->NextLevel[0]->nodeNo);
 			makeQ("-", makeStr(opNode->nodeNo, 1), "-", "Print");
 		}
+
+		if(!strcmp(opNode->NType, "return"))
+		{
+			printf("return\n");
+			if(opNode->noOps == 0)
+				makeQ("-", "-", "-", "return");
+			else
+				makeQ(opNode->NextLevel[0]->id->name, "-", "-", "return");
+		}
+
 		if(opNode->noOps == 0)
 		{
 			if(!strcmp(opNode->NType, "break"))
@@ -863,25 +845,26 @@
 				makeQ("-", "-", "-", "pass");
 			}
 
-			if(!strcmp(opNode->NType, "return"))
-			{
-				printf("return\n");
-				makeQ("-", "-", "-", "return");
-			}
 		}
 		
 		
 	}
-		void printQuads()
-	{
+	void printQuads()
+	{	
+		FILE *fp = fopen("./optimization/quads.csv", "w");
+		fprintf(fp, "OP,ARG1,ARG2,RES\n");
 		printf("\n--------------------------------All Quads---------------------------------\n");
 		int i = 0;
 		for(i=0; i<qIndex; i++)
 		{
 			if(allQ[i].I > -1)
+			{
 				printf("%d\t%s\t%s\t%s\t%s\n", allQ[i].I, allQ[i].Op, allQ[i].A1, allQ[i].A2, allQ[i].R);
+				fprintf(fp, "%s,%s,%s,%s\n", allQ[i].Op, allQ[i].A1, allQ[i].A2, allQ[i].R);
+			}
 		}
 		printf("--------------------------------------------------------------------------\n");
+		fclose(fp);
 	}
 
 %}
@@ -914,13 +897,14 @@ constant : T_INT {insertRecord("Constant", $<text>1, @1.first_line, currScope); 
 		 ;
 
 
-term : T_IDENTIFIER { printf("Identifier!\n"); modifyRecordID("Identifier", $<text>1, @1.first_line, currScope); $$ = createID_Const("Identifier", $<text>1, currScope);}
+term : T_IDENTIFIER {modifyRecordID("Identifier", $<text>1, @1.first_line, currScope); $$ = createID_Const("Identifier", $<text>1, currScope);}
 	 | constant {$$=$1;}
 	 ;
 
 StartParse : T_NL StartParse {$$=$2;}
-		   | finalStatements T_NL {resetDepth();} StartParse  {$$ = createOp("NewLine", 2, $1, $4);}
+		   | finalStatements T_NL {resetDepth();} StartParse {$$ = createOp("NewLine", 2, $1, $4);}
 		   | finalStatements T_NL {$$=$1;}
+		   | finalStatements StartParse {$$ = createOp("NewLine", 2, $1, $2);}
 		   | finalStatements {$$=$1;}
 		   ;
 
@@ -944,8 +928,10 @@ arith_exp : term {$$=$1;}
 		  ;
 
 bool_exp : bool_term T_OR bool_term {$$ = createOp("or", 2, $1, $3);} 
+		 | arith_exp T_OR arith_exp {$$ = createOp("or", 2, $1, $3);} 
          | arith_exp T_LT arith_exp {$$ = createOp("<", 2, $1, $3);}
          | bool_term T_AND bool_term {$$ = createOp("and", 2, $1, $3);}
+		 | arith_exp T_AND arith_exp {$$ = createOp("and", 2, $1, $3);}
          | arith_exp T_GT arith_exp {$$ = createOp(">", 2, $1, $3);}
          | arith_exp T_LE arith_exp {$$ = createOp("<=", 2, $1, $3);}
          | arith_exp T_GE arith_exp {$$ = createOp(">=", 2, $1, $3);}
@@ -990,7 +976,6 @@ finalStatements : basic_stmt {$$ = $1;}
 				| cmpd_stmt {$$ = $1;}
 				| func_def {$$ = $1;}
 				| func_call {$$ = $1;}
-				| T_NL 
 				;
 
 cmpd_stmt : if_stmt {$$ = $1;}
@@ -1021,16 +1006,14 @@ start_suite : basic_stmt {$$=$1;}
 T_NLDD : T_NL | T_DD 
 	   ;
 
-suite : T_NLDD T_ND finalStatements {$$ = createOp("Next", 1, $3);}
-	  | T_NLDD T_ND finalStatements suite {$$ = createOp("Next", 2, $3, $4);}
+suite : T_NLDD T_ND finalStatements suite {$$ = createOp("Next", 2, $3, $4);}
 	  | T_NLDD end_suite {$$ = $2;};
-	  |
+	  | { $$ = createOp("EndBlock", 0); resetDepth(); }
 	  ;
 
-end_suite : T_NLDD {updateCScope($<depth>1);} finalStatements {$$ = createOp("EndBlock", 1, $3);} 
-		  | T_NLDD {updateCScope($<depth>1);} {$$ = createOp("EndBlock", 0);}
-		  | finalStatements {$$ = createOp("EndBlock", 1, $1);}
-		  | {$$ = createOp("EndBlock", 0); resetDepth();};
+end_suite : T_NLDD { updateCScope($<depth>1);} finalStatements {$$ = createOp("EndBlock", 1, $3);} 
+		  | T_NLDD {updateCScope($<depth>1);} {$$ = createOp("EndBlock", 0);}			
+		  | { $$ = createOp("EndBlock", 0); resetDepth(); }
 		  ;
 
 args : T_IDENTIFIER  {addToList($<text>1, 1);} args_list {$$ = createOp(argsList, 0); clearArgsList();} 

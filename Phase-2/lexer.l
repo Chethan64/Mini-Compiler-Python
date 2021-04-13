@@ -26,21 +26,16 @@
 
     void check()
     {
-        //printf("CTABS: %d PTABS: %d\n",currTabs,prevTabs);
         if(prevTabs < currTabs)
         {
-            // printf("Here!\n");
             totalScopes++;
             currScope = totalScopes;
         }    
         else if(prevTabs > currTabs)
         {
-            // printf("CTABS: %d PTABS: %d\n",currTabs,prevTabs);
             int i = bt_iden;
-            // printf("Bt_iden: %d\n",bt_iden);
             while(i>=0)
             {
-                // printf("Backtracking: %d CurrentTabs: %d\n",backtrack[i][1],currTabs);
                 if(currTabs == backtrack[i][1])
                 {
                     currScope = backtrack[i][0];
@@ -55,7 +50,6 @@
         backtrack[bt_iden][0] = currScope;
         backtrack[bt_iden][1] = currTabs;
         bt_iden++;
-        // printf("Current Scope: %d\n",currScope);
     }
 
     void initStack()
@@ -110,7 +104,6 @@
 			}
 			else
 			{
-				// printf("Nope");
 				break;
 			}	
 		}
