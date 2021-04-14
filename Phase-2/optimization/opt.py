@@ -100,21 +100,23 @@ def constantSubexpression(basicBlock):
         elif(i["OP"] == '='):
             used.add(i["RES"])
     
-    print("Subexp:",subexp)
-    print("Used:",used)
+    # print("Subexp:",subexp)
+    # print("Used:",used)
 
     subexp_unused = dict()
     for i in subexp:
         if(i[1] not in used and i[2] not in used):
             subexp_unused[i] = subexp[i]
     subexp = subexp_unused
-    print("Unused:",subexp_unused)
+    # print("Unused:",subexp_unused)
     for i in basicBlock:
         exp = (i["OP"],i["ARG1"],i["ARG2"])
         if(exp in subexp and i["RES"] != subexp[exp]):
+
             i["OP"] = '='
             i["ARG1"] = subexp[exp]
             i["ARG2"] = ""
+            # print("heyyy")
 
 findLeaders(quads, leaderSet)
 leaderSet = sorted(leaderSet)
@@ -124,29 +126,43 @@ basicBlocks = list()
 for i in range(len(leaderSet)-1):
     basicBlocks.append(quads[leaderSet[i]:leaderSet[i+1]])
 
-for i in basicBlocks:
-    # for j in i:
-    #     print(j)
-    # print()
-    # old_i = copy.deepcopy(i)
-    # constant_folding(i)
-    # constantPropagation(i)
-    # while(old_i != i):
-    #     old_i = copy.deepcopy(i)
-    #     # for j in i:
-    #     #     print(j)
-    #     # print()
-    #     constant_folding(i)
-    #     constantPropagation(i)
-    constantSubexpression(i)
-    for j in i:
-        print(j)
-    print()
 
-print("Temp Removal")
-# tempRemoval(basicBlocks)
-for j in basicBlocks:
-    for i in j:
-        print(i)
-    print()
-print()
+print("Total Number Of Basic Blocks: ",len(basicBlocks))
+for i in basicBlocks:
+	print("The basic block")
+	for j in i:
+	    print(j)
+	print()
+	old_i = copy.deepcopy(i)
+	constant_folding(i)
+	constantPropagation(i)
+	while(old_i != i):
+		old_i = copy.deepcopy(i)
+		constant_folding(i)
+		constantPropagation(i)
+	print("After constant_folding, copy and constant Propogation")
+	for j in i:
+		print(j)
+	print()
+	constantSubexpression(i)
+	print("After common subexpression elimination")
+	for j in i:
+		print(j)
+	print()
+	print("Removing Unused Temps")
+	tempRemoval(basicBlocks)
+	for j in i:
+		print(j)
+	print()
+	print("End of basic block")
+	print()
+	print()
+	print()
+
+# print("Temp Removal")
+
+# for j in basicBlocks:
+#     for i in j:
+#         print(i)
+#     print()
+# print()

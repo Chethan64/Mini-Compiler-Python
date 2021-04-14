@@ -30,6 +30,7 @@
 		int decLineNo;
 		int STableScope;
 		int lastUseLine;
+		char value[100];
 	} record;
 
 	typedef struct STable
@@ -71,6 +72,7 @@
 	node ***Tree = NULL;
 	int* levelIndices = NULL;
 	int* scopeIndexMap = NULL;
+	char value[100];
 	
 	/* Function definitions */
 	record* findRecord(const char *name, const char *type, int scope);
@@ -82,7 +84,7 @@
 	void initNewTable(int currScope, int prevScope);
 	void init();
 	int searchRecordInScope(const char* type, const char *name, int index);
-	void insertRecord(const char* type, const char *name, int lineNo, int scope);
+	void insertRecord(const char* type, const char *name, int lineNo, int scope,  char *value);
 	void checkList(const char *name, int lineNo, int scope);
 	void printSTable();
 	void freeAll();
@@ -105,6 +107,7 @@
 
 	void init()
 	{
+		value[0] = '\0';
 		int i = 0;
 		symbolTables = (STable*)calloc(MAXST, sizeof(STable));
 		scopeIndexMap = (int*)calloc(MAXST, sizeof(int));
@@ -164,7 +167,7 @@
 		return -1;
 	}
 	
-	void insertRecord(const char* type, const char *name, int lineNo, int scope)
+	void insertRecord(const char* type, const char *name, int lineNo, int scope, char *value)
 	{ 
 		int index = scopeIndexMap[scope];
 		int recordIndex = searchRecordInScope(type, name, index);
@@ -178,11 +181,13 @@
 			symbolTables[index].Elements[symbolTables[index].noOfElems].decLineNo = lineNo;
 			symbolTables[index].Elements[symbolTables[index].noOfElems].STableScope = currScope;
 			symbolTables[index].Elements[symbolTables[index].noOfElems].lastUseLine = lineNo;
+			strcpy(symbolTables[index].Elements[symbolTables[index].noOfElems].value, value);
 			symbolTables[index].noOfElems++;
 		}
 		else
 		{
 			symbolTables[index].Elements[recordIndex].lastUseLine = lineNo;
+			strcpy(symbolTables[index].Elements[symbolTables[index].noOfElems].value, value);	
 		}
 		
 	}
@@ -226,15 +231,15 @@
 		int i = 0, j = 0;
 		
 		printf("\n----------------------------All Symbol Tables----------------------------");
-		printf("\nScope\tName\tType\t\tDeclaration\tLast Used Line\n");
+		printf("\nScope\tName\tType\t\tDeclaration\tLast Used Line\tValue\n");
 		for(i=0; i<=sIndex; i++)
 		{
 			for(j=0; j<symbolTables[i].noOfElems; j++)
 			{
 				if(strcmp(symbolTables[i].Elements[j].type,"ICGTempVar") && strcmp(symbolTables[i].Elements[j].type,"ICGTempLabel"))
-					printf("%d \t%s\t%s\t%d\t\t%d\n", symbolTables[i].Elements[j].STableScope, symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine);
+					printf("%d \t%s\t%s\t%d\t\t%d\t\t%s\n", symbolTables[i].Elements[j].STableScope, symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine, symbolTables[i].Elements[j].value);
 				else
-					printf("- \t%s\t%s\t%d\t\t%d\n", symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine);
+					printf("- \t%s\t%s\t%d\t\t%d\t\t-\n", symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine);
 			}
 		}
 		
@@ -253,13 +258,14 @@
 		depth = 10;
 	}
 
-	void modifyRecordID(const char *type, const char *name, int lineNo, int scope)
+	void modifyRecordID(const char *type, const char *name, int lineNo, int scope, int flag, char *value)
 	{
 		int i =0;
 		int index = scopeIndexMap[scope];
 		if(index == -1)
 		{
-			printf("%s '%s' at line %d Not Declared\n", type, name, yylineno);
+			printf("Hello!\n");
+			printf("%s '%s' at line %d Not SADSA Declared\n", type, name, yylineno);
 			exit(1);
 		}
 		if(index==0)
@@ -270,10 +276,13 @@
 				if(strcmp(symbolTables[index].Elements[i].type, type)==0 && (strcmp(symbolTables[index].Elements[i].name, name)==0))
 				{
 					symbolTables[index].Elements[i].lastUseLine = lineNo;
+					if(flag == 1)
+						strcpy(symbolTables[index].Elements[i].value, value);
 					return;
 				}	
 			}
-			printf("%s '%s' at line %d Not Declared\n", type, name, yylineno);
+			printf("Hello2!\n");
+			printf("%s '%s' at line %d Not sadasd Declared\n", type, name, yylineno);
 			exit(1);
 		}
 		
@@ -282,10 +291,12 @@
 			if(strcmp(symbolTables[index].Elements[i].type, type)==0 && (strcmp(symbolTables[index].Elements[i].name, name)==0))
 			{
 				symbolTables[index].Elements[i].lastUseLine = lineNo;
+				if(flag == 1)
+						strcpy(symbolTables[index].Elements[i].value, value);
 				return;
 			}	
 		}
-		return modifyRecordID(type, name, lineNo, symbolTables[index].ParentScope);
+		return modifyRecordID(type, name, lineNo, symbolTables[index].ParentScope, flag, value);
 	}
 	
 	void checkList(const char *name, int lineNo, int scope)
@@ -519,14 +530,14 @@
 		{
 				strcpy(tString, "T");
 				strcat(tString, A);
-				insertRecord("ICGTempVar", tString, -1, 1);
+				insertRecord("ICGTempVar", tString, -1, 1, "");
 				return tString;
 		}
 		else
 		{
 				strcpy(lString, "L");
 				strcat(lString, A);
-				insertRecord("ICGTempLabel", lString, -1, 1);
+				insertRecord("ICGTempLabel", lString, -1, 1, "");
 				return lString;
 		}
 
@@ -562,7 +573,7 @@
 		
 		if(opNode->NType == NULL)
 		{
-			if((!strcmp(opNode->id->type, "Identifier")) || (!strcmp(opNode->id->type, "Constant")))
+			if((!strcmp(opNode->id->type, "Identifier")) || (!strcmp(opNode->id->type, "Constant") || opNode))
 			{
 				printf("T%d = %s\n", opNode->nodeNo, opNode->id->name);
 				makeQ(makeStr(opNode->nodeNo, 1), opNode->id->name, "-", "=");
@@ -570,6 +581,57 @@
 			return;
 		}
 		
+		if(!strcmp(opNode->NType, "=") && !strcmp(opNode->NextLevel[0]->id->type, "ListTypeID"))
+		{
+			char temp[5]; 
+			char temp_n[5];
+			Xitoa(opNode->NextLevel[0]->nodeNo,temp_n);
+			strcpy(temp, "T");
+			strcat(temp, temp_n);
+			int arr[100];
+			int arrI = 0;
+			node* tempnode = opNode->NextLevel[1];
+			while(strcmp(tempnode->NType,"EmptyList"))
+			{
+				char t_var[5]; 
+				char t_n[5];
+				Xitoa(tempnode->NextLevel[0]->nodeNo,t_n);
+				strcpy(t_var, "T");
+				strcat(t_var, t_n);
+				arr[arrI++] = tempnode->NextLevel[0]->nodeNo;
+		
+				printf("%s = %s\n", t_var, tempnode->NextLevel[0]->id->name);
+				makeQ(t_var, tempnode->NextLevel[0]->id->name, "-", "=");
+				tempnode = tempnode->NextLevel[1];
+			}
+
+			char statement[100];
+			strcpy(statement,"[");
+			printf("%s = ", temp);
+			for(int i=0; i<arrI; i++)
+			{
+				char t_p[5];
+				char t_nn[5];
+				Xitoa(arr[i],t_nn);
+				strcpy(t_p, "T");
+				strcat(t_p, t_nn);
+				if(i+1 == arrI)
+					strcat(statement, t_p);
+				else
+				{
+					strcat(statement, t_p);
+					strcat(statement, ",");
+				}
+			}
+			strcat(statement, "]");
+
+			printf("%s\n", statement);
+			makeQ(temp, statement ,"-", "=");
+			printf("%s = %s\n", opNode->NextLevel[0]->id->name,temp);
+			makeQ(opNode->NextLevel[0]->id->name, temp, "-", "=");
+
+		}
+
 		if((!strcmp(opNode->NType, "If")) || (!strcmp(opNode->NType, "Elif")))
 		{			
 			switch(opNode->noOps)
@@ -769,7 +831,7 @@
 			return;
 		}
 		
-		if(!strcmp(opNode->NType, "="))
+		if(!strcmp(opNode->NType, "=") && strcmp(opNode->NextLevel[0]->id->type, "ListTypeID"))
 		{
 			codeGenOp(opNode->NextLevel[1]);
 			printf("%s = T%d\n", opNode->NextLevel[0]->id->name, opNode->NextLevel[1]->nodeNo);
@@ -866,6 +928,40 @@
 		printf("--------------------------------------------------------------------------\n");
 		fclose(fp);
 	}
+	
+	void inorderEval(node* root)
+	{
+		if(root->noOps == 2)
+		{
+			inorderEval(root->NextLevel[0]);
+			strcat(value, root->NType);
+			printf("Value1: %s %s\n", value, root->NType);
+			inorderEval(root->NextLevel[1]);
+		}
+		else if(root->noOps == 1)
+		{
+			strcat(value, root->NextLevel[0]->id->name);
+			printf("Value1: %s %s\n", value, root->NextLevel[0]->id->name);
+		}
+		else if(root->noOps == -1)
+		{
+			strcat(value, root->id->name);
+			printf("Value1: %s %s\n", value, root->id->name);
+		}
+	}
+
+	void listNodeEval(node* root)
+	{
+		if(root->noOps == 0)
+			return;
+		else if(root->noOps == 2)
+		{
+			strcat(value, root->NextLevel[0]->id->name);
+			if(root->NextLevel[1]->noOps != 0)
+				strcat(value, ",");
+			listNodeEval(root->NextLevel[1]);
+		}
+	}
 
 %}
 
@@ -884,22 +980,24 @@
 %nonassoc T_ELIF
 %nonassoc T_ELSE
 
-%type<node> StartDebugger for_stmt args start_suite suite end_suite func_call call_args StartParse finalStatements arith_exp bool_exp term constant basic_stmt cmpd_stmt func_def list_index import_stmt pass_stmt break_stmt print_stmt if_stmt elif_stmts else_stmt  return_stmt assign_stmt bool_term bool_factor temp_
+%type<node> StartDebugger for_stmt args start_suite suite end_suite func_call list_args call_args StartParse finalStatements arith_exp bool_exp term constant basic_stmt cmpd_stmt func_def list_index import_stmt pass_stmt break_stmt print_stmt if_stmt elif_stmts else_stmt  return_stmt assign_stmt bool_term bool_factor temp_
 
 
 %%
 
 StartDebugger : {initStack(); init();} StartParse T_EOF {printf("\nValid python syntax!\n");printAST($2); codeGenOp($2); printQuads(); printSTable(); freeAll(); exit(0);};
 
-constant : T_INT {insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
-	     | T_FLOAT {insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
-		 | T_STRING {insertRecord("Constant", $<text>1, @1.first_line, currScope); $$ = createID_Const("Constant", $<text>1, currScope);}
+constant : T_INT {insertRecord("Constant", $<text>1, @1.first_line, currScope, ""); $$ = createID_Const("Constant", $<text>1, currScope);}
+	     | T_FLOAT {insertRecord("Constant", $<text>1, @1.first_line, currScope, ""); $$ = createID_Const("Constant", $<text>1, currScope);}
+		 | T_STRING {insertRecord("Constant", $<text>1, @1.first_line, currScope, ""); $$ = createID_Const("Constant", $<text>1, currScope);}
 		 ;
 
 
-term : T_IDENTIFIER {modifyRecordID("Identifier", $<text>1, @1.first_line, currScope); $$ = createID_Const("Identifier", $<text>1, currScope);}
+term : T_IDENTIFIER {modifyRecordID("Identifier", $<text>1, @1.first_line, currScope, 0, ""); $$ = createID_Const("Identifier", $<text>1, currScope);}
 	 | constant {$$=$1;}
 	 ;
+
+list_index : T_IDENTIFIER T_LBRKT constant T_RBRKT {checkList($<text>1, @1.first_line, currScope); $$ = createOp("ListIndex", 2, createID_Const("ListTypeID", $<text>1, currScope), $3);};
 
 StartParse : T_NL StartParse {$$=$2;}
 		   | finalStatements T_NL {resetDepth();} StartParse {$$ = createOp("NewLine", 2, $1, $4);}
@@ -919,10 +1017,10 @@ basic_stmt : pass_stmt {$$=$1;}
            ;
 
 arith_exp : term {$$=$1;}
-          | arith_exp  T_PLUS  arith_exp {$$ = createOp("+", 2, $1, $3);}
-          | arith_exp  T_MINUS  arith_exp {$$ = createOp("-", 2, $1, $3);}
-          | arith_exp  T_MUL  arith_exp {$$ = createOp("*", 2, $1, $3);}
-          | arith_exp  T_DIV  arith_exp {$$ = createOp("/", 2, $1, $3);}
+          | arith_exp  T_PLUS arith_exp {$$ = createOp("+", 2, $1, $3);}
+          | arith_exp  T_MINUS arith_exp {$$ = createOp("-", 2, $1, $3);}
+          | arith_exp  T_MUL arith_exp {$$ = createOp("*", 2, $1, $3);}
+          | arith_exp  T_DIV arith_exp {$$ = createOp("/", 2, $1, $3);}
           | T_MINUS arith_exp {$$ = createOp("-", 1, $2);}
           | T_LBRACE arith_exp T_RBRACE {$$=$2;}
 		  ;
@@ -941,15 +1039,15 @@ bool_exp : bool_term T_OR bool_term {$$ = createOp("or", 2, $1, $3);}
 
 bool_term : bool_factor {$$=$1;}
           | arith_exp T_EQ arith_exp {$$ = createOp("==", 2, $1, $3);}
-          | T_TRUE {insertRecord("Constant", "True", @1.first_line, currScope); $$ = createID_Const("Constant", "True", currScope);}
-          | T_FALSE  {insertRecord("Constant", "False", @1.first_line, currScope); $$ = createID_Const("Constant", "False", currScope);};
+          | T_TRUE {insertRecord("Constant", "True", @1.first_line, currScope,""); $$ = createID_Const("Constant", "True", currScope);}
+          | T_FALSE  {insertRecord("Constant", "False", @1.first_line, currScope,""); $$ = createID_Const("Constant", "False", currScope);};
 		  ;
 
 bool_factor : T_NOT bool_factor {$$ = createOp("!", 1, $2);}
             | T_LBRACE bool_exp T_RBRACE {$$=$2;}
 			;
 
-import_stmt : T_IMPORT T_IDENTIFIER {insertRecord("PackageName", $<text>2, @2.first_line, currScope); $$ = createOp("import", 1, createID_Const("PackageName", $<text>2, currScope));}
+import_stmt : T_IMPORT T_IDENTIFIER {insertRecord("PackageName", $<text>2, @2.first_line, currScope, ""); $$ = createOp("import", 1, createID_Const("PackageName", $<text>2, currScope));}
 			;
 
 pass_stmt : T_PASS {$$ = createOp("pass", 0);};
@@ -959,15 +1057,21 @@ break_stmt : T_BREAK {$$ = createOp("break", 0);};
            ;
 
 return_stmt : T_RETURN constant {$$ = createOp("return", 1, $2);}
-            | T_RETURN T_IDENTIFIER {insertRecord("Identifier", $<text>2, @2.first_line, currScope); $$ = createOp("return", 1, createID_Const("Identifier", $<text>2, currScope));}
+            | T_RETURN T_IDENTIFIER {insertRecord("Identifier", $<text>2, @2.first_line, currScope ,""); $$ = createOp("return", 1, createID_Const("Identifier", $<text>2, currScope));}
             | T_RETURN {$$ = createOp("return", 0);}
             ;
 
-assign_stmt : T_IDENTIFIER T_EQUAL arith_exp {insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);}  
-            | T_IDENTIFIER T_EQUAL bool_exp {insertRecord("Identifier", $<text>1, @1.first_line, currScope);$$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);} 
-            | T_IDENTIFIER T_EQUAL func_call {insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);} 
-            | T_IDENTIFIER T_EQUAL T_LBRKT T_RBRKT {insertRecord("ListTypeID", $<text>1, @1.first_line, currScope); $$ = createID_Const("ListTypeID", $<text>1, currScope);} ;
-            ; 
+assign_stmt : T_IDENTIFIER T_EQUAL arith_exp { inorderEval($3); insertRecord("Identifier", $<text>1, @1.first_line, currScope,value); modifyRecordID("Identifier", $<text>1, @1.first_line, currScope, 1, value); value[0]='\0'; $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);}  
+            | T_IDENTIFIER T_EQUAL bool_exp {insertRecord("Identifier", $<text>1, @1.first_line, currScope,"");$$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);} 
+            | T_IDENTIFIER T_EQUAL func_call {insertRecord("Identifier", $<text>1, @1.first_line, currScope,""); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3);} 
+            | T_IDENTIFIER T_EQUAL T_LBRKT list_args T_RBRKT { strcat(value,"["); listNodeEval($4); strcat(value,"]"); insertRecord("ListTypeID", $<text>1, @1.first_line, currScope, value); value[0]='\0'; $$ = createOp("=", 2, createID_Const("ListTypeID", $<text>1, currScope), $4);}
+            | T_IDENTIFIER T_EQUAL list_index { insertRecord("Identifier", $<text>1, @1.first_line, currScope, value); $$ = createOp("=", 2, createID_Const("Identifier", $<text>1, currScope), $3); }
+			;
+
+list_args :   term T_COMMA list_args {$$ = createOp("ListInit", 2, $1, $3);}
+			| term {$$ = createOp("ListInit", 2, $1, createOp("EmptyList", 0));}
+			| {$$ = createOp("EmptyList", 0);}
+			;
 
 print_stmt : T_PRINT T_LBRACE term T_RBRACE {$$ = createOp("Print", 1, $3);}
 			;
@@ -993,7 +1097,7 @@ elif_stmts : else_stmt {$$=$1;}
 else_stmt : T_ELSE T_COLON start_suite {$$ = createOp("Else", 1, $3);};
 		  ;
 
-temp_ : T_IDENTIFIER {insertRecord("Identifier", $<text>1, @1.first_line, currScope); $$ = createID_Const("Identifier", $<text>1, currScope);};
+temp_ : T_IDENTIFIER {insertRecord("Identifier", $<text>1, @1.first_line, currScope, ""); $$ = createID_Const("Identifier", $<text>1, currScope);};
 
 for_stmt : T_FOR temp_ T_IN T_RANGE T_LBRACE term T_RBRACE T_COLON start_suite { $$ = createOp("ForRange", 3,$2, $6, $9);}
          | T_FOR temp_ T_IN term T_COLON start_suite {$$ = createOp("ForList", 3, $2, $4, $6);}
@@ -1035,7 +1139,7 @@ call_args : T_IDENTIFIER {addToList($<text>1, 1);} call_list {$$ = createOp(args
           | {$$ = createOp("Void", 0);};	
 		  ;
 
-func_def : T_DEF T_IDENTIFIER {insertRecord("Func_Name", $<text>2, @2.first_line, currScope);} T_LBRACE args T_RBRACE T_COLON start_suite {$$ = createOp("Func_Name", 3, createID_Const("Func_Name", $<text>2, currScope), $5, $8);};
+func_def : T_DEF T_IDENTIFIER {insertRecord("Func_Name", $<text>2, @2.first_line, currScope, "");} T_LBRACE args T_RBRACE T_COLON start_suite {$$ = createOp("Func_Name", 3, createID_Const("Func_Name", $<text>2, currScope), $5, $8);};
 		 ;
 
 func_call : T_IDENTIFIER T_LBRACE call_args T_RBRACE  {$$ = createOp("Func_Call", 2, createID_Const("Func_Name", $<text>1, currScope), $3);};
