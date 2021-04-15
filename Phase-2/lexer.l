@@ -18,6 +18,7 @@
     int backtrack[100][2];
     int numexp = 0;
     int depth;
+    extern void yyerror(const char* str);
 
     #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno; yylloc.first_column = yycolumn; yylloc.last_column + yyleng - 1; yycolumn += yyleng;
 
@@ -450,8 +451,19 @@ False {
     yylval.text = strdup(s);
     return T_STRING;
 }
-
-(\"\"\").*?(\"\"\") ;
-(\'\'\').*?(\'\'\') ;
+(\"\"\")(.|[\n^\"])*?(\"\"\") {
+    int count = 0;
+    for(int i=3;i<yyleng-5;++i)
+    {
+        if(yytext[i] == '"' && yytext[i+1] == '"' && yytext[i+2] == '"')
+            count++;
+    }
+    if(count%2)
+    {
+        printf("\033[1;31mSyntax Error: Multiline Comments not matched\033[0m\n");
+        exit(0);    
+    }
+}
+(\'\'\')(.|[\n^\'])*?(\'\'\') ;
 <<EOF>> return T_EOF;
 %%

@@ -1,0 +1,13 @@
+a = 15
+b = 25
+
+if b>10:
+	c = 100
+	print(c)
+elif b>20:
+	d = b*a
+else:
+	print(a)
+	#print(d)
+
+#10 = a

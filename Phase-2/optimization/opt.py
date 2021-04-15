@@ -5,16 +5,18 @@ import copy
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
+    BLUE = '\033[34m'
     OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
+    GREEN = '\033[1;32m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    RED = '\033[1;31m'   
 
 quads = list()
-with open("quads.csv","r") as csvFile:
+with open("./optimization/quads.csv","r") as csvFile:
     quads = list(csv.DictReader(csvFile))
 
 leaderSet = set()
@@ -41,7 +43,7 @@ def constantPropagation(basicBlock):
         if quad['ARG2'] in value.keys():
             quad['ARG2'] = value[quad['ARG2']]
                
-def constant_folding(basicBlock):
+def constantFolding(basicBlock):
     for i in basicBlock:
         if(i["ARG1"].isdigit() and i["ARG2"].isdigit()):
             op = i["OP"]
@@ -111,15 +113,12 @@ def constantSubexpression(basicBlock):
         elif(i["OP"] == '='):
             used.add(i["RES"])
     
-    # print("Subexp:",subexp)
-    # print("Used:",used)
-
     subexp_unused = dict()
     for i in subexp:
         if(i[1] not in used and i[2] not in used):
             subexp_unused[i] = subexp[i]
+
     subexp = subexp_unused
-    # print("Unused:",subexp_unused)
     for i in basicBlock:
         exp = (i["OP"],i["ARG1"],i["ARG2"])
         if(exp in subexp and i["RES"] != subexp[exp]):
@@ -127,11 +126,9 @@ def constantSubexpression(basicBlock):
             i["OP"] = '='
             i["ARG1"] = subexp[exp]
             i["ARG2"] = ""
-            # print("heyyy")
 
 def printBasicBlock(basicBlock):
-    print()
-    print(f"{bcolors.OKBLUE}OP\tARG1\tARG2\tRES{bcolors.ENDC}")
+    print(f"{bcolors.BLUE}OP\tARG1\tARG2\tRES{bcolors.ENDC}")
     for quad in basicBlock:
         print(quad["OP"]+"\t"+quad["ARG1"]+"\t"+quad["ARG2"]+"\t"+quad["RES"])
     print()
@@ -144,25 +141,28 @@ basicBlocks = list()
 for i in range(len(leaderSet)-1):
     basicBlocks.append(quads[leaderSet[i]:leaderSet[i+1]])
 
-print("Total Number Of Basic Blocks: ",len(basicBlocks))
+print(f"{bcolors.GREEN}Total Number Of Basic Blocks: ",len(basicBlocks))
+print()
 for i in basicBlocks:
-    print(f"{bcolors.HEADER}The basic block")
+    print(f"{bcolors.GREEN}BASIC BLOCK:")
     printBasicBlock(i)
+    
     old_i = copy.deepcopy(i)
-    constant_folding(i)
+    constantFolding(i)
     constantPropagation(i)
     while(old_i != i):
         old_i = copy.deepcopy(i)
-        constant_folding(i)
+        constantFolding(i)
         constantPropagation(i)
-    print(f"{bcolors.HEADER}After constant_folding, copy and constant Propogation{bcolors.ENDC}")
+
+    print(f"{bcolors.RED}After Constant Folding, Copy and Constant Propogation{bcolors.ENDC}")
     printBasicBlock(i)
     constantSubexpression(i)
-    print(f"{bcolors.HEADER}After common subexpression elimination{bcolors.ENDC}")
+    print(f"{bcolors.RED}After Common Subexpression Elimination{bcolors.ENDC}")
     printBasicBlock(i)
-    print(f"{bcolors.HEADER}Removing Unused Temps{bcolors.ENDC}")
+    print(f"{bcolors.RED}Removing Unused Temporaries{bcolors.ENDC}")
     tempRemoval(basicBlocks)
     printBasicBlock(i)
-    print(f"{bcolors.HEADER}End of basic block{bcolors.ENDC}")
+    print(f"{bcolors.RED}End of Basic Block{bcolors.ENDC}")
     print()
     print()

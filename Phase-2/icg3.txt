@@ -6,10 +6,8 @@ if a>1:
 	if a>10:
 		n = 10
 	else:
-		m = 100
+		b = 200
 elif b<10:
 	d = 100
-elif a<100:
-	f = 200
 else:
 	e = 5

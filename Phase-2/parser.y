@@ -238,7 +238,7 @@
 			for(j=0; j<symbolTables[i].noOfElems; j++)
 			{
 				if(strcmp(symbolTables[i].Elements[j].type,"ICGTempVar") && strcmp(symbolTables[i].Elements[j].type,"ICGTempLabel"))
-					printf("%d \t%s\t%s\t%d\t\t%d\t\t%s\n", symbolTables[i].Elements[j].STableScope, symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine, symbolTables[i].Elements[j].value);
+					printf("%d \t%s\t%s\t%d\t\t%d\t\t%s\n", j+1, symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine, symbolTables[i].Elements[j].value);
 				else
 					printf("- \t%s\t%s\t%d\t\t%d\t\t-\n", symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine);
 			}
@@ -574,7 +574,7 @@
 		
 		if(opNode->NType == NULL)
 		{
-			if((!strcmp(opNode->id->type, "Identifier")) || (!strcmp(opNode->id->type, "Constant") || opNode))
+			if((!strcmp(opNode->id->type, "Identifier")) || (!strcmp(opNode->id->type, "Constant")))
 			{
 				printf("T%d = %s\n", opNode->nodeNo, opNode->id->name);
 				makeQ(makeStr(opNode->nodeNo, 1), opNode->id->name, "-", "=");
@@ -649,7 +649,7 @@
 					// lIndex++;
 					codeGenOp(opNode->NextLevel[1]);
 					// lIndex--;
-					printf("L%d: if\n", temp);
+					printf("L%d: \n", temp);
 					makeQ(makeStr(temp, 0), "-", "-", "Label");
 					break;
 				}
@@ -663,7 +663,7 @@
 					int gototemp = lIndex++;
 					printf("goto L%d\n", gototemp);
 					makeQ(makeStr(lIndex, 0), "-", "-", "goto");
-					printf("L%d: here\n", temp);
+					printf("L%d: \n", temp);
 					makeQ(makeStr(temp, 0), "-", "-", "Label");
 					codeGenOp(opNode->NextLevel[2]);
 					printf("L%d: \n", gototemp);
@@ -958,6 +958,7 @@
 		fprintf(fp, "OP,ARG1,ARG2,RES\n");
 		printf("\033[1;31m\n\n\n			   ALL QUADS						\033[0m\n\n");
 		int i = 0;
+		printf("\tOP\tARG1\tARG2\tRES\n\n");
 		for(i=0; i<qIndex; i++)
 		{
 			if(allQ[i].I > -1)

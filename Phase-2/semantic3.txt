@@ -1,0 +1,4 @@
+a = "string"
+
+if b == a:
+	c = "This is an error"
