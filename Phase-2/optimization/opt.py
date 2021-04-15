@@ -2,6 +2,17 @@ import re
 import csv
 import copy
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 quads = list()
 with open("quads.csv","r") as csvFile:
     quads = list(csv.DictReader(csvFile))
@@ -119,8 +130,11 @@ def constantSubexpression(basicBlock):
             # print("heyyy")
 
 def printBasicBlock(basicBlock):
-    for block in basicBlock:
-        print(block.values())
+    print()
+    print(f"{bcolors.OKBLUE}OP\tARG1\tARG2\tRES{bcolors.ENDC}")
+    for quad in basicBlock:
+        print(quad["OP"]+"\t"+quad["ARG1"]+"\t"+quad["ARG2"]+"\t"+quad["RES"])
+    print()
 
 findLeaders(quads, leaderSet)
 leaderSet = sorted(leaderSet)
@@ -130,29 +144,25 @@ basicBlocks = list()
 for i in range(len(leaderSet)-1):
     basicBlocks.append(quads[leaderSet[i]:leaderSet[i+1]])
 
-
 print("Total Number Of Basic Blocks: ",len(basicBlocks))
 for i in basicBlocks:
-	print("The basic block")
-	printBasicBlock(i)
-	old_i = copy.deepcopy(i)
-	constant_folding(i)
-	constantPropagation(i)
-	while(old_i != i):
-		old_i = copy.deepcopy(i)
-		constant_folding(i)
-		constantPropagation(i)
-	print("After constant_folding, copy and constant Propogation")
-	printBasicBlock(i)
-	constantSubexpression(i)
-	print("After common subexpression elimination")
-	for j in i:
-		print(j)
-	print()
-	print("Removing Unused Temps")
-	tempRemoval(basicBlocks)
-	printBasicBlock(i)
-	print("End of basic block")
-	print()
-	print()
-	print()
+    print(f"{bcolors.HEADER}The basic block")
+    printBasicBlock(i)
+    old_i = copy.deepcopy(i)
+    constant_folding(i)
+    constantPropagation(i)
+    while(old_i != i):
+        old_i = copy.deepcopy(i)
+        constant_folding(i)
+        constantPropagation(i)
+    print(f"{bcolors.HEADER}After constant_folding, copy and constant Propogation{bcolors.ENDC}")
+    printBasicBlock(i)
+    constantSubexpression(i)
+    print(f"{bcolors.HEADER}After common subexpression elimination{bcolors.ENDC}")
+    printBasicBlock(i)
+    print(f"{bcolors.HEADER}Removing Unused Temps{bcolors.ENDC}")
+    tempRemoval(basicBlocks)
+    printBasicBlock(i)
+    print(f"{bcolors.HEADER}End of basic block{bcolors.ENDC}")
+    print()
+    print()
