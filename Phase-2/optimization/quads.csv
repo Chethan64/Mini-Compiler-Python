@@ -9,26 +9,37 @@ OP,ARG1,ARG2,RES
 If False,T8,-,L0
 =,10,-,T9
 =,T9,-,c
-goto,-,-,L1
-Label,-,-,L0
-=,b,-,T14
+=,a,-,T12
+=,10,-,T13
+>,T12,T13,T14
+If False,T14,-,L1
 =,10,-,T15
-<,T14,T15,T16
-If False,T16,-,L0
-=,100,-,T17
-=,T17,-,d
-goto,-,-,L1
-Label,-,-,L0
-=,a,-,T22
-=,100,-,T23
-<,T22,T23,T24
-If False,T24,-,L0
-=,200,-,T25
-=,T25,-,f
-goto,-,-,L1
-Label,-,-,L0
-=,5,-,T30
-=,T30,-,e
+=,T15,-,n
+goto,-,-,L3
 Label,-,-,L1
-Label,-,-,L1
+=,100,-,T20
+=,T20,-,m
+Label,-,-,L2
+goto,-,-,L6
+Label,-,-,L0
+=,b,-,T30
+=,10,-,T31
+<,T30,T31,T32
+If False,T32,-,L6
+=,100,-,T33
+=,T33,-,d
+goto,-,-,L8
+Label,-,-,L6
+=,a,-,T38
+=,100,-,T39
+<,T38,T39,T40
+If False,T40,-,L8
+=,200,-,T41
+=,T41,-,f
+goto,-,-,L10
+Label,-,-,L8
+=,5,-,T46
+=,T46,-,e
+Label,-,-,L9
+Label,-,-,L7
 Label,-,-,L1

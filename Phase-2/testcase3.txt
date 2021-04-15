@@ -1,0 +1,15 @@
+a = 10
+b = 30
+
+if a>1:
+	c = 10
+	if a>10:
+		n = 10
+	else:
+		m = 100
+elif b<10:
+	d = 100
+elif a<100:
+	f = 200
+else:
+	e = 5

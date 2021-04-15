@@ -2,10 +2,39 @@ a = 10
 b = 30
 
 if a>1:
-	c = 10
+	if a>10:
+		v = 100
 elif b<10:
 	d = 100
 elif a<100:
 	f = 200
 else:
 	e = 5
+
+
+finalStatements
+	finalStatements
+		cmpd_stmt
+			if_stmt
+				T_IF
+				bool_exp
+				T_COLON
+				start_suite
+					T_NLDD
+					T_TAB
+					finalStatements
+						cmpd_stmt
+							if_stmt
+								T_IF
+								bool_exp
+								T_COLON
+								start_suite
+									T_NLDD
+									T_TAB
+									finalStatements
+										basic_stmt
+									suite
+											
+					suite
+				elif_stmts
+	StartParse

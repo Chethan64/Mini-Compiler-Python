@@ -641,30 +641,32 @@
 			{
 				case 2 : 
 				{
-					int temp = lIndex;
 					codeGenOp(opNode->NextLevel[0]);
-					printf("If False T%d goto L%d\n", opNode->NextLevel[0]->nodeNo, lIndex);
+					int temp = lIndex++;
+					printf("If False T%d goto L%d\n", opNode->NextLevel[0]->nodeNo, temp);
+					// printf("HERE!\n");
 					makeQ(makeStr(temp, 0), makeStr(opNode->NextLevel[0]->nodeNo, 1), "-", "If False");
-					lIndex++;
+					// lIndex++;
 					codeGenOp(opNode->NextLevel[1]);
-					lIndex--;
-					printf("L%d: ", temp);
+					// lIndex--;
+					printf("L%d: if\n", temp);
 					makeQ(makeStr(temp, 0), "-", "-", "Label");
 					break;
 				}
 				case 3 : 
 				{
-					int temp = lIndex;
 					codeGenOp(opNode->NextLevel[0]);
-					printf("If False T%d goto L%d\n", opNode->NextLevel[0]->nodeNo, lIndex);
+					int temp = lIndex++;
+					printf("If False T%d goto L%d\n", opNode->NextLevel[0]->nodeNo, temp);
 					makeQ(makeStr(temp, 0), makeStr(opNode->NextLevel[0]->nodeNo, 1), "-", "If False");					
 					codeGenOp(opNode->NextLevel[1]);
-					printf("goto L%d\n", temp+1);
-					makeQ(makeStr(temp+1, 0), "-", "-", "goto");
-					printf("L%d: ", temp);
+					int gototemp = lIndex++;
+					printf("goto L%d\n", gototemp);
+					makeQ(makeStr(lIndex, 0), "-", "-", "goto");
+					printf("L%d: here\n", temp);
 					makeQ(makeStr(temp, 0), "-", "-", "Label");
 					codeGenOp(opNode->NextLevel[2]);
-					printf("L%d: ", temp+1);
+					printf("L%d: \n", gototemp);
 					makeQ(makeStr(temp+1, 0), "-", "-", "Label");
 					lIndex+=2;
 					break;
@@ -1120,7 +1122,7 @@ cmpd_stmt : if_stmt {$$ = $1;}
 		  | for_stmt {$$ = $1;}
 		  ;
 
-if_stmt : T_IF bool_exp T_COLON start_suite {$$ = createOp("If", 2, $2, $4);}    %prec T_IF ;
+if_stmt : T_IF bool_exp T_COLON start_suite {printf("This!\n"); $$ = createOp("If", 2, $2, $4);}	%prec T_IF;
         | T_IF bool_exp T_COLON start_suite elif_stmts {$$ = createOp("If", 3, $2, $4, $5);}
 		;
 		
