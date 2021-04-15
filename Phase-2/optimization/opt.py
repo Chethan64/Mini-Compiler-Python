@@ -118,6 +118,10 @@ def constantSubexpression(basicBlock):
             i["ARG2"] = ""
             # print("heyyy")
 
+def printBasicBlock(basicBlock):
+    for block in basicBlock:
+        print(block.values())
+
 findLeaders(quads, leaderSet)
 leaderSet = sorted(leaderSet)
 
@@ -130,9 +134,7 @@ for i in range(len(leaderSet)-1):
 print("Total Number Of Basic Blocks: ",len(basicBlocks))
 for i in basicBlocks:
 	print("The basic block")
-	for j in i:
-	    print(j)
-	print()
+	printBasicBlock(i)
 	old_i = copy.deepcopy(i)
 	constant_folding(i)
 	constantPropagation(i)
@@ -141,9 +143,7 @@ for i in basicBlocks:
 		constant_folding(i)
 		constantPropagation(i)
 	print("After constant_folding, copy and constant Propogation")
-	for j in i:
-		print(j)
-	print()
+	printBasicBlock(i)
 	constantSubexpression(i)
 	print("After common subexpression elimination")
 	for j in i:
@@ -151,18 +151,8 @@ for i in basicBlocks:
 	print()
 	print("Removing Unused Temps")
 	tempRemoval(basicBlocks)
-	for j in i:
-		print(j)
-	print()
+	printBasicBlock(i)
 	print("End of basic block")
 	print()
 	print()
 	print()
-
-# print("Temp Removal")
-
-# for j in basicBlocks:
-#     for i in j:
-#         print(i)
-#     print()
-# print()

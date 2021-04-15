@@ -1,13 +1,7 @@
-a = 20
-b = 30
-if a==b:
-	D = a*b+10
-	E = a*b*4
-if a==b:
-	D=a*b*10
-	a=10
-	b=4
-	D=a*b+10
+a = 10
+b = 20
 
-for i in range(b):
-	h = 1
+if b>10:
+	a = 0
+else:
+	b = 100

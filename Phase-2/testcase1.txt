@@ -1,41 +1,10 @@
-# Correct syntax input
+a = 10
+b = 20
 
-hello = 10
-b = 10
-t = 10
-q = b + t
-
-if t<100:
-	k = 100
-	if k<1000:
-		num = 100
-		bi = 255
-	b = 1
-	c = 50
-elif b>100:
-	if b<900:
-		h = 100
-	else:
-		n = 100
-	z = 100
-	c = 100
+if b>10:
+	c = a + b
 else:
-	if b>=100:
-		x=10
-	m = 10
-	q = 10
+	d = a * b
 
-for i in range(b):
-	m = 10
-	g = 1000
-	m = 10
-	if b>100:
-		min = 500
-	elif m<10:
-		bp = 1324
-	else:
-		nmp = 177
-l = 1
-for i in range(l):
-	print("udsakj")
-a = "hello"
+for i in range(a):
+	b = b * i

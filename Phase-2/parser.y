@@ -46,10 +46,10 @@
 	typedef struct ASTNode
 	{
 		int nodeNo;
-    	char *NType;	/*Operator*/
+    	char *NType;
    		int noOps;
     	struct ASTNode** NextLevel;
-    	record *id;		/*Identifier or Const*/
+    	record *id;
 	
 	} node;
 
@@ -62,7 +62,6 @@
 		int I;
 	} Quad;
 	
-	// int *arrayScope = NULL;
 	STable *symbolTables = NULL;
 	int sIndex = -1, aIndex = -1, tabCount = 0, tIndex = 0, lIndex = 0, qIndex = 0, nodeCount = 0;
 	node *rootNode;
@@ -73,8 +72,9 @@
 	int* levelIndices = NULL;
 	int* scopeIndexMap = NULL;
 	char value[100];
+	int forflag;
 	
-	/* Function definitions */
+	/* Function declarations */
 	record* findRecord(const char *name, const char *type, int scope);
   	node *createID_Const(char *value, char *type, int scope);
   	int power(int base, int exp);
@@ -91,6 +91,7 @@
 	void addToList(char *newVal, int flag);
 	void clearArgsList();
 	int checkIfBinOperator(char *Op);
+	void yyerror(const char* s);
 
 	int scopeBasedTableSearch(int scope)
 	{
@@ -109,16 +110,22 @@
 	{
 		value[0] = '\0';
 		int i = 0;
+		forflag = 0;
+
 		symbolTables = (STable*)calloc(MAXST, sizeof(STable));
 		scopeIndexMap = (int*)calloc(MAXST, sizeof(int));
+
 		for(i = 0; i<MAXST; ++i)
 		{
 			scopeIndexMap[i] = -1;
 		}
 		scopeIndexMap[1] = 0;
+
 		initNewTable(1,0);
+
 		argsList = (char *)malloc(100);
 		strcpy(argsList, "");
+
 		tString = (char*)calloc(10, sizeof(char));
 		lString = (char*)calloc(10, sizeof(char));
 		allQ = (Quad*)calloc(MAXQUADS, sizeof(Quad));
@@ -141,17 +148,6 @@
 		symbolTables[sIndex].Elements = (record*)calloc(MAXRECST, sizeof(record));
 		symbolTables[sIndex].ParentScope = prevScope;
 		symbolTables[sIndex].ParentSIndex = scopeIndexMap[prevScope];
-	}
-
-	
-	int power(int base, int exp)
-	{
-		int i =0, res = 1;
-		for(i; i<exp; i++)
-		{
-			res *= base;
-		}
-		return res;
 	}
 
 	int searchRecordInScope(const char* type, const char *name, int index)
@@ -202,6 +198,7 @@
 			printf("\n%s '%s' at line %d Not Found in Symbol Table\n", type, name, yylineno);
 			exit(1);
 		}
+
 		if(index == 0)
 		{
 			for(i=0; i<symbolTables[index].noOfElems; i++)
@@ -230,10 +227,14 @@
 	{
 		int i = 0, j = 0;
 		
-		printf("\n----------------------------All Symbol Tables----------------------------");
-		printf("\nScope\tName\tType\t\tDeclaration\tLast Used Line\tValue\n");
-		for(i=0; i<=sIndex; i++)
+		printf("\033[1;31m\n			   SYMBOL TABLES						\033[0m\n\n");
+		for(i=0; i <= sIndex; i++)
 		{
+			if(symbolTables[i].noOfElems > -1)
+			{
+				printf("\033[1;31mScope: %d\033[0m\n", symbolTables[i].Elements[0].STableScope);
+				printf("\033[0;34mSlNo.\tName\tType\t\tDeclaration\tLast Used Line\tValue\033[0m\n");
+			}
 			for(j=0; j<symbolTables[i].noOfElems; j++)
 			{
 				if(strcmp(symbolTables[i].Elements[j].type,"ICGTempVar") && strcmp(symbolTables[i].Elements[j].type,"ICGTempLabel"))
@@ -241,10 +242,10 @@
 				else
 					printf("- \t%s\t%s\t%d\t\t%d\t\t-\n", symbolTables[i].Elements[j].name, symbolTables[i].Elements[j].type, symbolTables[i].Elements[j].decLineNo,  symbolTables[i].Elements[j].lastUseLine);
 			}
+
+			printf("\n\n");
 		}
-		
-		printf("-------------------------------------------------------------------------\n");
-		
+				
 	}
 	
 	void updateCScope(int scope)
@@ -254,7 +255,8 @@
 
 	void resetDepth()
 	{
-		while(top()) pop();
+		while(top()) 
+			pop();
 		depth = 10;
 	}
 
@@ -262,12 +264,13 @@
 	{
 		int i =0;
 		int index = scopeIndexMap[scope];
+
 		if(index == -1)
 		{
-			printf("Hello!\n");
-			printf("%s '%s' at line %d Not SADSA Declared\n", type, name, yylineno);
+			printf("%s '%s' at line %d Not Declared\n", type, name, yylineno);
 			exit(1);
 		}
+		
 		if(index==0)
 		{
 			for(i=0; i<symbolTables[index].noOfElems; i++)
@@ -281,8 +284,7 @@
 					return;
 				}	
 			}
-			printf("Hello2!\n");
-			printf("%s '%s' at line %d Not sadasd Declared\n", type, name, yylineno);
+			printf("%s '%s' at line %d Not Declared\n", type, name, yylineno);
 			exit(1);
 		}
 		
@@ -303,11 +305,13 @@
 	{
 		int index = scopeIndexMap[scope];
 		int i;
+
 		if(index == -1)
 		{
 			printf("Identifier '%s' at line %d Not Indexable\n", name, yylineno);
 			exit(1);
 		}
+
 		if(index==0)
 		{
 			
@@ -334,7 +338,7 @@
 		
 		for(i=0; i<symbolTables[index].noOfElems; i++)
 		{
-			if(strcmp(symbolTables[index].Elements[i].type, "ListTypeID")==0 && (strcmp(symbolTables[index].Elements[i].name, name)==0))
+			if(strcmp(symbolTables[index].Elements[i].type, "ListTypeID") == 0 && (strcmp(symbolTables[index].Elements[i].name, name) == 0))
 			{
 				symbolTables[index].Elements[i].lastUseLine = lineNo;
 				return;
@@ -423,56 +427,58 @@
 
 	void ASTToArray(node *root, int level)
 	{
-	  if(root == NULL )
-	  {
-	    return;
-	  }
+		if(root == NULL )
+		{
+			return;
+		}
 	  
-	  if(root->noOps <= 0)
-	  {
-	  	Tree[level][levelIndices[level]] = root;
-	  	levelIndices[level]++;
-	  }
+		if(root->noOps <= 0)
+		{
+			Tree[level][levelIndices[level]] = root;
+			levelIndices[level]++;
+		}
 	  
-	  if(root->noOps > 0)
-	  {
-	 		int j;
-	 		Tree[level][levelIndices[level]] = root;
-	 		levelIndices[level]++; 
-	    for(j=0; j<root->noOps; j++)
-	    {
-	    	ASTToArray(root->NextLevel[j], level+1);
-	    }
-	  }
+		if(root->noOps > 0)
+		{
+			int j;
+			Tree[level][levelIndices[level]] = root;
+			levelIndices[level]++; 
+
+			for(j=0; j<root->noOps; j++)
+			{
+				ASTToArray(root->NextLevel[j], level+1);
+			}
+		}
 	}
 
 	int IsValidNumber(char * string)
 	{
 		for(int i = 0; i < strlen( string ); i ++)
 		{
-			//ASCII value of 0 = 48, 9 = 57. So if value is outside of numeric range then fail
-			//Checking for negative sign "-" could be added: ASCII value 45.
 			if (string[i] < 48 || string[i] > 57)
 				return 0;
 		}
-		
 		return 1;
 	}
 
-
 	void printAST(node *root)
 	{
-		printf("\n-------------------------Abstract Syntax Tree--------------------------\n");
+		printf("\033[1;31m\n\n\n		ABSTRACT SYNTAX TREE						\033[0m\n\n");
 		ASTToArray(root, 0);
-		int j = 0, p, q, maxLevel = 0, lCount = 0;
-		
-		while(levelIndices[maxLevel] > 0) maxLevel++;
+		int j = 0;
+		int p;
+		int q;
+		int maxLevel = 0;
+		int lCount = 0;
+
+		while(levelIndices[maxLevel] > 0) 
+			maxLevel++;
 		
 		while(levelIndices[j] > 0)
 		{
 			for(q=0; q<lCount; q++)
 			{
-				printf(" ");
+				printf("  ");
 			
 			}
 			for(p=0; p<levelIndices[j] ; p++)
@@ -501,8 +507,8 @@
 	{
 		if(str == NULL)
 		{
-			 printf("Allocate Memory\n");
-		   return;
+			printf("Allocate Memory\n");
+			return;
 		}
 		sprintf(str, "%d", num);
 	}
@@ -511,14 +517,13 @@
 	{
 		if((!strcmp(Op, "+")) || (!strcmp(Op, "*")) || (!strcmp(Op, "/")) || (!strcmp(Op, ">=")) || (!strcmp(Op, "<=")) || (!strcmp(Op, "<")) || (!strcmp(Op, ">")) || 
 			 (!strcmp(Op, "in")) || (!strcmp(Op, "==")) || (!strcmp(Op, "and")) || (!strcmp(Op, "or")))
-			{
-				return 1;
-			}
-			
-			else 
-			{
-				return 0;
-			}
+		{
+			return 1;
+		}
+		else 
+		{
+			return 0;
+		}
 	}
 
 	char *makeStr(int no, int flag)
@@ -528,19 +533,18 @@
 		
 		if(flag==1)
 		{
-				strcpy(tString, "T");
-				strcat(tString, A);
-				insertRecord("ICGTempVar", tString, -1, 1, "");
-				return tString;
+			strcpy(tString, "T");
+			strcat(tString, A);
+			insertRecord("ICGTempVar", tString, -1, 1, "");
+			return tString;
 		}
 		else
 		{
-				strcpy(lString, "L");
-				strcat(lString, A);
-				insertRecord("ICGTempLabel", lString, -1, 1, "");
-				return lString;
+			strcpy(lString, "L");
+			strcat(lString, A);
+			insertRecord("ICGTempLabel", lString, -1, 1, "");
+			return lString;
 		}
-
 	}
 	
 	void makeQ(char *R, char *A1, char *A2, char *Op)
@@ -558,12 +562,9 @@
 		allQ[qIndex].I = qIndex;
  
 		qIndex++;
-		
 		return;
 	}
 	
-
-
 	void codeGenOp(node *opNode)
 	{
 		if(opNode == NULL)
@@ -585,9 +586,11 @@
 		{
 			char temp[5]; 
 			char temp_n[5];
+
 			Xitoa(opNode->NextLevel[0]->nodeNo,temp_n);
 			strcpy(temp, "T");
 			strcat(temp, temp_n);
+
 			int arr[100];
 			int arrI = 0;
 			node* tempnode = opNode->NextLevel[1];
@@ -624,9 +627,9 @@
 				}
 			}
 			strcat(statement, "]");
-
 			printf("%s\n", statement);
 			makeQ(temp, statement ,"-", "=");
+
 			printf("%s = %s\n", opNode->NextLevel[0]->id->name,temp);
 			makeQ(opNode->NextLevel[0]->id->name, temp, "-", "=");
 
@@ -696,16 +699,20 @@
 		if(!strcmp(opNode->NType, "ForRange"))
 		{
 			int temp = lIndex;
+			forflag = 1;
 			node* tempnode = createOp("<",2,opNode->NextLevel[0],opNode->NextLevel[1]);
-			codeGenOp(tempnode);
 			char temp_n[5];
 			Xitoa(opNode->NextLevel[0]->nodeNo, temp_n);
-			char temp_ini[5];
-			strcpy(temp_ini, "T");
-			strcat(temp_ini, temp_n);
-			makeQ(temp_ini, "0", "-", "=");
-			printf("%s = 0\n", temp_ini);
-			printf("L%d: If False T%d goto L%d\n", lIndex, tempnode->nodeNo, lIndex+1);
+			// char temp_ini[5];
+			// strcpy(temp_ini, "T");
+			// strcat(temp_ini, temp_n);
+			// makeQ(temp_ini, "0", "-", "=");
+			// printf("\nL%d: ", lIndex);
+			codeGenOp(tempnode);
+			forflag = 0;
+			// printf("%s = 0\n", temp_ini);
+			
+			printf("If False T%d goto L%d\n", tempnode->nodeNo, lIndex+1);
 			makeQ(makeStr(temp, 0), "-", "-", "Label");		
 			makeQ(makeStr(temp+1, 0), makeStr(tempnode->nodeNo, 1), "-", "If False");
 			lIndex+=2;			
@@ -714,7 +721,9 @@
 			strcpy(temp_s, "T");
 			strcat(temp_s, temp_n);
 			makeQ(makeStr(opNode->NextLevel[0]->nodeNo, 1), temp_s, "1", "+");
-			printf("%s = %s + 1\n", temp_s, temp_s);	
+			printf("%s = %s + 1\n", temp_s, temp_s);
+			// makeQ(opNode->NextLevel[0]->id->name,temp_s,"-","=");
+			// printf("%s = %s\n", opNode->NextLevel[0]->id->name, temp_s);	
 			printf("goto L%d\n", temp);
 			makeQ(makeStr(temp, 0), "-", "-", "goto");
 			printf("L%d: ", temp+1);
@@ -762,7 +771,7 @@
 			return;
 		}
 		
-		if(checkIfBinOperator(opNode->NType)==1)
+		if(checkIfBinOperator(opNode->NType)==1 && !forflag)
 		{
 			codeGenOp(opNode->NextLevel[0]);
 			codeGenOp(opNode->NextLevel[1]);
@@ -774,6 +783,36 @@
 			strcpy(X2, makeStr(opNode->NextLevel[0]->nodeNo, 1));
 			strcpy(X3, makeStr(opNode->NextLevel[1]->nodeNo, 1));
 
+			printf("T%d = T%d %s T%d\n", opNode->nodeNo, opNode->NextLevel[0]->nodeNo, opNode->NType, opNode->NextLevel[1]->nodeNo);
+			makeQ(X1, X2, X3, opNode->NType);
+			free(X1);
+			free(X2);
+			free(X3);
+			return;
+		}
+
+		if(checkIfBinOperator(opNode->NType)==1 && forflag)
+		{
+			char temp_n[5];
+			Xitoa(opNode->NextLevel[0]->nodeNo, temp_n);
+			char temp_ini[5];
+			strcpy(temp_ini, "T");
+			strcat(temp_ini, temp_n);
+			makeQ(temp_ini, "0", "-", "=");
+			printf("%s = 0\n", temp_ini);
+			makeQ(opNode->NextLevel[0]->id->name, temp_ini, "-", "=");
+			printf("%s = %s\n", opNode->NextLevel[0]->id->name, temp_ini);
+
+			codeGenOp(opNode->NextLevel[1]);
+			char *X1 = (char*)malloc(10);
+			char *X2 = (char*)malloc(10);
+			char *X3 = (char*)malloc(10);
+			
+			strcpy(X1, makeStr(opNode->nodeNo, 1));
+			strcpy(X2, makeStr(opNode->NextLevel[0]->nodeNo, 1));
+			strcpy(X3, makeStr(opNode->NextLevel[1]->nodeNo, 1));
+
+			printf("L%d: ", lIndex);
 			printf("T%d = T%d %s T%d\n", opNode->nodeNo, opNode->NextLevel[0]->nodeNo, opNode->NType, opNode->NextLevel[1]->nodeNo);
 			makeQ(X1, X2, X3, opNode->NType);
 			free(X1);
@@ -915,7 +954,7 @@
 	{	
 		FILE *fp = fopen("./optimization/quads.csv", "w");
 		fprintf(fp, "OP,ARG1,ARG2,RES\n");
-		printf("\n--------------------------------All Quads---------------------------------\n");
+		printf("\033[1;31m\n\n\n			   ALL QUADS						\033[0m\n\n");
 		int i = 0;
 		for(i=0; i<qIndex; i++)
 		{
@@ -925,7 +964,7 @@
 				fprintf(fp, "%s,%s,%s,%s\n", allQ[i].Op, allQ[i].A1, allQ[i].A2, allQ[i].R);
 			}
 		}
-		printf("--------------------------------------------------------------------------\n");
+		printf("\n\n");
 		fclose(fp);
 	}
 	
@@ -935,18 +974,15 @@
 		{
 			inorderEval(root->NextLevel[0]);
 			strcat(value, root->NType);
-			printf("Value1: %s %s\n", value, root->NType);
 			inorderEval(root->NextLevel[1]);
 		}
 		else if(root->noOps == 1)
 		{
 			strcat(value, root->NextLevel[0]->id->name);
-			printf("Value1: %s %s\n", value, root->NextLevel[0]->id->name);
 		}
 		else if(root->noOps == -1)
 		{
 			strcat(value, root->id->name);
-			printf("Value1: %s %s\n", value, root->id->name);
 		}
 	}
 
@@ -984,8 +1020,7 @@
 
 
 %%
-
-StartDebugger : {initStack(); init();} StartParse T_EOF {printf("\nValid python syntax!\n");printAST($2); codeGenOp($2); printQuads(); printSTable(); freeAll(); exit(0);};
+StartDebugger : {initStack(); init();} StartParse T_EOF {printf("\nValid python syntax!\n");printAST($2); printf("\033[1;31m\n\n\n		INTERMEDIATE CODE	\033[0m\n\n");codeGenOp($2); printQuads(); printSTable(); freeAll(); exit(0);};
 
 constant : T_INT {insertRecord("Constant", $<text>1, @1.first_line, currScope, ""); $$ = createID_Const("Constant", $<text>1, currScope);}
 	     | T_FLOAT {insertRecord("Constant", $<text>1, @1.first_line, currScope, ""); $$ = createID_Const("Constant", $<text>1, currScope);}
@@ -1000,7 +1035,6 @@ term : T_IDENTIFIER {modifyRecordID("Identifier", $<text>1, @1.first_line, currS
 list_index : T_IDENTIFIER T_LBRKT constant T_RBRKT {checkList($<text>1, @1.first_line, currScope); $$ = createOp("ListIndex", 2, createID_Const("ListTypeID", $<text>1, currScope), $3);};
 
 StartParse : T_NL StartParse {$$=$2;}
-		   | finalStatements T_NL {resetDepth();} StartParse {$$ = createOp("NewLine", 2, $1, $4);}
 		   | finalStatements T_NL {$$=$1;}
 		   | finalStatements StartParse {$$ = createOp("NewLine", 2, $1, $2);}
 		   | finalStatements {$$=$1;}
@@ -1149,7 +1183,7 @@ func_call : T_IDENTIFIER T_LBRACE call_args T_RBRACE  {$$ = createOp("Func_Call"
 
 void yyerror(const char *msg)
 {
-	printf("\nSyntax error at line %d, column %d\n", yylineno, yylloc.last_column);
+	printf("\n\033[1;31mSyntax Error at line %d, column %d: Stopped Parsing\033[0m\n", yylineno, yylloc.last_column);
 	exit(0);
 }
 

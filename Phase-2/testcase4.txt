@@ -1,5 +1,0 @@
-# wrong testcase 1 - if else
-else:
-	a = 100
-if b>100:
-	d = 100
