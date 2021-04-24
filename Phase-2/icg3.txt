@@ -1,13 +1,2 @@
-a = 10
-b = 30
-
-if a>1:
-	c = 10
-	if a>10:
-		n = 10
-	else:
-		b = 200
-elif b<10:
-	d = 100
-else:
-	e = 5
+https://www.youtube.com/embed/vInUoPtg8m0
+https://www.youtube.com/embed/hxADTEJalRw
